@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/GTFSConverter/GTFSConverter.iml" filepath="$PROJECT_DIR$/GTFSConverter/GTFSConverter.iml" />
+      <module fileurl="file://$PROJECT_DIR$/GTFSDataParser/GTFSDataParser.iml" filepath="$PROJECT_DIR$/GTFSDataParser/GTFSDataParser.iml" />
       <module fileurl="file://$PROJECT_DIR$/KIF-Projekt.iml" filepath="$PROJECT_DIR$/KIF-Projekt.iml" />
     </modules>
   </component>
