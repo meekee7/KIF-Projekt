@@ -1,10 +1,14 @@
+import Network.Graph;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
+import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.sql.Time;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by micha on 01.11.2016.
@@ -22,13 +26,14 @@ public class Main {
             MyLogger.l.error(e.toString());
         }
 
-        Set<String> transits = new HashSet<>();
-        data.getAllTransfers().stream()
-                .filter(x -> x.getFromStop() != x.getToStop())
-                .forEach(x -> {
-                    transits.add(x.getFromStop().getName());
-                    transits.add(x.getToStop().getName());
-                });
-        MyLogger.l.info("Transit affected: " + transits.size());
+        MyLogger.l.info("Start " + ZonedDateTime.now());
+
+        Graph graph = Graph.parseGTFS(data, Arrays.asList("100", "200")
+                //data.getAllRoutes().stream().map(Route::getShortName).collect(Collectors.toList())
+        );
+        //MyLogger.l.info("Nodes: " + graph.getNodes().size());
+        //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));
+        MyLogger.l.info("End " + ZonedDateTime.now());
+        MyLogger.l.info("Edge stats " + graph.getEdgeStats());
     }
 }
