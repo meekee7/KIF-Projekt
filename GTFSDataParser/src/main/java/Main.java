@@ -28,8 +28,8 @@ public class Main {
 
         MyLogger.l.info("Start " + ZonedDateTime.now());
 
-        Graph graph = Graph.parseGTFS(data, Arrays.asList("100", "200")
-                //data.getAllRoutes().stream().map(Route::getShortName).collect(Collectors.toList())
+        Graph graph = Graph.parseGTFS(data, //Arrays.asList("100", "200")
+                data.getAllRoutes().stream().map(Route::getShortName).collect(Collectors.toList())
         );
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));

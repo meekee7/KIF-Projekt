@@ -1,5 +1,6 @@
 package Network;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
@@ -27,7 +28,7 @@ public class Graph {
     }
 
     public void mergeNodes(Collection<Node> tomerge) {
-       Optional<Node> minopt = tomerge.stream()
+        Optional<Node> minopt = tomerge.stream()
                 .min((x, y) ->
                         x.getName().length() - y.getName().length());
 
@@ -80,8 +81,8 @@ public class Graph {
                 .get();
     }
 
-    public IntSummaryStatistics getEdgeStats(){
-        return this.nodes.parallelStream().mapToInt(x->x.getNeighbours().size()).summaryStatistics();
+    public IntSummaryStatistics getEdgeStats() {
+        return this.nodes.parallelStream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
     }
 
     @XmlElement
@@ -98,7 +99,7 @@ public class Graph {
                 .filter(x -> routenames.contains(x.getShortName()))
                 .collect(Collectors.toSet());
 
-        System.out.println("Routes collected: "+routes.size());
+        System.out.println("Routes collected: " + routes.size());
 
         Collection<Trip> trips = data.getAllTrips().stream()
                 .filter(x -> routes.contains(x.getRoute()))
@@ -106,8 +107,11 @@ public class Graph {
 
         System.out.println("Trips collected: " + trips.size());
 
-        Collection<Stop> stops = data.getAllStopTimes().parallelStream()
+        Collection<StopTime> stoptimes = data.getAllStopTimes().parallelStream()
                 .filter(x -> trips.contains(x.getTrip()))
+                .collect(Collectors.toList());
+
+        Collection<Stop> stops = stoptimes.parallelStream()
                 .map(StopTime::getStop)
                 .distinct()
                 .collect(Collectors.toList());
@@ -119,9 +123,14 @@ public class Graph {
 
         System.out.println("Stopmap built");
 
+        Map<Trip, Collection<StopTime>> tripmap = new ConcurrentHashMap<>();
+        trips.forEach(x -> tripmap.put(x, ConcurrentHashMap.newKeySet()));
+        stoptimes.parallelStream().forEach(x -> tripmap.get(x.getTrip()).add(x));
+
+        System.out.println("Tripmap built");
+
         trips.parallelStream().forEach(trip -> {
-            data.getAllStopTimes().stream()
-                    .filter(x -> x.getTrip() == trip)
+            tripmap.get(trip).stream()
                     .sorted((x, y) -> x.getStopSequence() - y.getStopSequence())
                     .map(StopTime::getStop)
                     .reduce(null, (prev, curr) -> {
