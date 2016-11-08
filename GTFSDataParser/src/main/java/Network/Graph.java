@@ -1,14 +1,11 @@
 package Network;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -17,11 +14,12 @@ import java.util.stream.Collectors;
 @XmlRootElement
 public class Graph {
     private Collection<Node> nodes = new HashSet<>();
+    private Collection<String> routesIncluded = Collections.EMPTY_LIST;
 
     /**
      * This method makes all one-directional links in the graph bidirectional.
      */
-    public void makeUndirected() {
+    public void makeEdgesSymmetric() {
         this.nodes.forEach(x ->
                 x.getNeighbours().forEach(y ->
                         y.getNeighbours().add(x)));
@@ -82,12 +80,17 @@ public class Graph {
     }
 
     public IntSummaryStatistics getEdgeStats() {
-        return this.nodes.parallelStream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
+        return this.nodes.stream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
     }
 
     @XmlElement
     public Collection<Node> getNodes() {
         return nodes;
+    }
+
+    @XmlElement
+    public Collection<String> getRoutesIncluded() {
+        return routesIncluded;
     }
 
     public static Graph parseGTFS(GtfsDaoImpl data, Collection<String> routenames) {
@@ -100,6 +103,7 @@ public class Graph {
                 .collect(Collectors.toSet());
 
         System.out.println("Routes collected: " + routes.size());
+        graph.routesIncluded = routes.stream().map(Route::getShortName).collect(Collectors.toList());
 
         Collection<Trip> trips = data.getAllTrips().stream()
                 .filter(x -> routes.contains(x.getRoute()))
@@ -107,56 +111,53 @@ public class Graph {
 
         System.out.println("Trips collected: " + trips.size());
 
-        Collection<StopTime> stoptimes = data.getAllStopTimes().parallelStream()
+        Collection<StopTime> stoptimes = data.getAllStopTimes().stream()
                 .filter(x -> trips.contains(x.getTrip()))
                 .collect(Collectors.toList());
 
-        Collection<Stop> stops = stoptimes.parallelStream()
+        Collection<Stop> stops = stoptimes.stream()
                 .map(StopTime::getStop)
                 .distinct()
                 .collect(Collectors.toList());
 
         System.out.println("Stops collected: " + stops.size());
 
-        Map<Stop, Node> stopmap = new ConcurrentHashMap<>(stops.size());
-        stops.parallelStream().forEach(x -> stopmap.put(x, new Node(x.getName(), x.getLat(), x.getLon())));
+        Map<Stop, Node> stopmap = new HashMap<>(stops.size());
+        stops.forEach(x -> stopmap.put(x, new Node(x.getName(), x.getLat(), x.getLon())));
 
         System.out.println("Stopmap built");
 
-        Map<Trip, Collection<StopTime>> tripmap = new ConcurrentHashMap<>();
-        trips.forEach(x -> tripmap.put(x, ConcurrentHashMap.newKeySet()));
-        stoptimes.parallelStream().forEach(x -> tripmap.get(x.getTrip()).add(x));
+        Map<Trip, Collection<StopTime>> tripmap = new HashMap<>();
+        trips.forEach(x -> tripmap.put(x, new HashSet<>()));
+        stoptimes.forEach(x -> tripmap.get(x.getTrip()).add(x));
 
         System.out.println("Tripmap built");
 
-        trips.parallelStream().forEach(trip -> {
-            tripmap.get(trip).stream()
-                    .sorted((x, y) -> x.getStopSequence() - y.getStopSequence())
-                    .map(StopTime::getStop)
-                    .reduce(null, (prev, curr) -> {
-                        if (prev != null)
-                            stopmap.get(curr).getNeighbours().add(stopmap.get(prev));
-                        return curr;
-                    });
-            //for (int i = 1; i < orderedStops.size(); i++)
-            //  stopmap.get(orderedStops.get(i)).getNeighbours().add(stopmap.get(orderedStops.get(i - 1)));
-        });
+        trips.forEach(trip -> tripmap.get(trip).stream()
+                .sorted((x, y) -> x.getStopSequence() - y.getStopSequence())
+                .map(StopTime::getStop)
+                .reduce(null, (prev, curr) -> {
+                    if (prev != null)
+                        stopmap.get(curr).getNeighbours().add(stopmap.get(prev));
+                    return curr;
+                }));
 
         System.out.println("Edges first pass");
 
         graph.getNodes().addAll(stopmap.values());
-        graph.makeUndirected();
+        graph.makeEdgesSymmetric();
 
         System.out.println("Edges second pass");
 
         Collection<Transfer> alltransfers = data.getAllTransfers().stream()
-                .filter(x -> x.getFromStop() != x.getToStop())
+                .filter(x -> x.getFromStop() != x.getToStop()) //Skip self-transfers
                 .collect(Collectors.toList());
         Collection<Set<Stop>> transferclusters = new ArrayList<>(alltransfers.size());
         alltransfers.forEach(transfer -> {
             Optional<Set<Stop>> cluster = transferclusters.stream()
-                    .filter(x -> x.contains(transfer.getFromStop())
-                            || x.contains(transfer.getToStop())).findFirst();
+                    .filter(x ->
+                            x.contains(transfer.getFromStop()) || x.contains(transfer.getToStop()))
+                    .findFirst();
             if (cluster.isPresent()) {
                 cluster.get().add(transfer.getFromStop());
                 cluster.get().add(transfer.getToStop());
@@ -170,6 +171,13 @@ public class Graph {
 
         System.out.println("Transfer clusters built: " + transferclusters.size());
 
+        /*
+        transferclusters.stream().map(x ->
+                x.stream()
+                        .min((y, z) -> y.getName().length() - z.getName().length())
+        ).map(x->x.get().getName()).forEach(System.out::println);
+        */
+
         transferclusters.stream()
                 .map(x -> x.stream()
                         .filter(stops::contains)
@@ -179,9 +187,12 @@ public class Graph {
 
         System.out.println("Transfer clusters merged, nodes remaining: " + graph.getNodes().size());
 
+        graph.makeEdgesSymmetric();
+        System.out.println("Edges third pass");
+
         graph.removeDisconnected();
 
-        System.out.println("Graph removed disconnected, nodes remaining: " + graph.getNodes().size());
+        System.out.println("Graph removed disconnected components, nodes remaining: " + graph.getNodes().size());
 
         return graph;
     }

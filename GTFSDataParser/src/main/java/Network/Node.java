@@ -4,7 +4,6 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by micha on 01.11.2016.
@@ -19,7 +18,7 @@ public class Node {
         this.name = name;
         this.lat = lat;
         this.lon = lon;
-        this.neighbours = ConcurrentHashMap.newKeySet();
+        this.neighbours = new HashSet<>();
     }
 
     @XmlAttribute
@@ -37,8 +36,18 @@ public class Node {
         return lon;
     }
 
-    @XmlAttribute
+    @XmlElement //TODO this creates loops in the serialization, do something different
     public Set<Node> getNeighbours() {
         return neighbours;
+    }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "name='" + name + '\'' +
+                ", lat=" + lat +
+                ", lon=" + lon +
+                ", links:" + neighbours.size() +
+                '}';
     }
 }
