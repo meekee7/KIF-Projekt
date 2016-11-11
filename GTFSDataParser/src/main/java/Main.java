@@ -34,18 +34,18 @@ public class Main {
 
         MyLogger.l.info("Start " + ZonedDateTime.now());
 
-        Graph graph = Graph.parseGTFS(data, //Arrays.asList("100", "200")
+        Graph graph = Graph.parseGTFS(data, //Arrays.asList("U2", "U6")
                 data.getAllRoutes().stream().map(Route::getShortName).collect(Collectors.toList())
         );
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));
         MyLogger.l.info("End " + ZonedDateTime.now());
         MyLogger.l.info("Edge stats " + graph.getEdgeStats());
-        MyLogger.l.info("Largest nodes: ");
-        graph.getNodes().stream().sorted((x, y) -> y.getNeighbours().size() - x.getNeighbours().size()).limit(20).forEach(System.err::println);
+        //graph.collapseChains();
+        //MyLogger.l.info("Largest nodes: ");
+        //graph.getNodes().stream().sorted((x, y) -> y.getNeighbours().size() - x.getNeighbours().size()).limit(20).forEach(System.err::println);
 
 
-        /*
         try {
             Path path = Paths.get("TestOutput.xml");
             if (!Files.exists(path))
@@ -54,6 +54,6 @@ public class Main {
         } catch (JAXBException | IOException e) {
             MyLogger.l.error(e.toString());
         }
-        */
+
     }
 }

@@ -4,6 +4,7 @@ import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class Graph {
     private Collection<Node> nodes = new HashSet<>();
     private Collection<String> routesIncluded = Collections.EMPTY_LIST;
+    private int idcounter = 0;
 
     /**
      * This method makes all one-directional links in the graph bidirectional.
@@ -22,7 +24,16 @@ public class Graph {
     public void makeEdgesSymmetric() {
         this.nodes.forEach(x ->
                 x.getNeighbours().forEach(y ->
-                        y.getNeighbours().add(x)));
+                        y.addNeighbour(x)));
+    }
+
+    /**
+     * This method removes all edges that point a node to itself.
+     * It is now redundant since nodes take care that they do not get any straps.
+     */
+    @Deprecated
+    public void removeStraps() {
+        this.nodes.forEach(x -> x.getNeighbours().remove(x));
     }
 
     public void mergeNodes(Collection<Node> tomerge) {
@@ -35,8 +46,8 @@ public class Graph {
         Node min = minopt.get();
 
         tomerge.remove(min);
-        tomerge.forEach(x -> min.getNeighbours().addAll(x.getNeighbours())); //Absorb all neighbours
-        min.getNeighbours().forEach(x -> x.getNeighbours().add(x)); //Become neighbour for all neighbours
+        tomerge.forEach(x -> min.addNeighbours(x.getNeighbours())); //Absorb all neighbours
+        min.getNeighbours().forEach(x -> x.addNeighbour(x)); //Become neighbour for all neighbours
         this.nodes.removeAll(tomerge);
         this.nodes.forEach(x -> x.getNeighbours().removeAll(tomerge)); //Forget all nodes that were removed
     }
@@ -74,23 +85,99 @@ public class Graph {
             components.add(component);
         }
 
-        this.nodes = components.stream()
+        Collection<Node> max = components.stream()
                 .max((x, y) -> x.size() - y.size())
                 .get();
+
+        //components.remove(max);
+        //System.out.println("Disconnected: " + components.size());
+        //components.forEach(System.out::println);
+
+        this.nodes = max;
+        //this.nodes = components.stream()
+        //.max((x, y) -> x.size() - y.size())
+        //        .get();
     }
 
     public IntSummaryStatistics getEdgeStats() {
         return this.nodes.stream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
     }
 
-    @XmlElement
+    @XmlElementWrapper(name = "nodes")
+    @XmlElement(name = "n")
     public Collection<Node> getNodes() {
         return nodes;
     }
 
-    @XmlElement
+    @XmlElementWrapper(name = "routesIncluded")
+    @XmlElement(name = "r")
     public Collection<String> getRoutesIncluded() {
         return routesIncluded;
+    }
+
+    @XmlElementWrapper(name = "edges")
+    @XmlElement(name = "e")
+    public Set<Edge> getEdges() {
+        Set<Edge> edges = new HashSet<>(this.getNodes().size() * 2);
+        this.nodes.forEach(x ->
+                x.getNeighbours().forEach(y ->
+                        edges.add(new Edge(x.id, y.id))
+                )
+        );
+        return edges;
+    }
+
+    public void setEdges(Set<Edge> edges) {
+        this.nodes.forEach(x -> x.getNeighbours().clear());
+        Map<Integer, Node> nodemap = new HashMap<>(this.nodes.size());
+        this.nodes.forEach(x -> nodemap.put(x.id, x));
+        edges.forEach(edge -> {
+            nodemap.get(edge.getA()).addNeighbour(nodemap.get(edge.getB()));
+            nodemap.get(edge.getB()).addNeighbour(nodemap.get(edge.getA()));
+        });
+    }
+
+    private static void walkSmallNode(Set<Node> target, Node node) {
+        if (target.contains(node) || node.getNeighbours().size() > 2)
+            return;
+        target.add(node);
+        node.getNeighbours().forEach(x -> walkSmallNode(target, x));
+    }
+
+    private static List<Node> orderChain(Set<Node> cluster) {
+        List<Node> chain = new ArrayList<>(cluster.size());
+        while (!cluster.isEmpty()) {
+            Node node = cluster.stream()
+                    .filter(x -> x.getNeighbours().size() == 1
+                            || !x.getNeighbours().stream()
+                            .allMatch(cluster::contains))
+                    .findAny()
+                    .get();
+            chain.add(node);
+            cluster.remove(node);
+        }
+        return chain;
+    }
+
+    public void collapseChains() {
+        Collection<Node> smallnodes = this.nodes.stream()
+                .filter(x -> x.getNeighbours().size() <= 2
+                        && x.getNeighbours().stream()
+                        .anyMatch(y -> y.getNeighbours().size() <= 2))
+                .collect(Collectors.toSet());
+        Collection<Set<Node>> clusters = new LinkedList<>();
+        while (!smallnodes.isEmpty()) {
+            Set<Node> cluster = new HashSet<>();
+            Node start = smallnodes.stream().findFirst().get();
+            walkSmallNode(cluster, start);
+            smallnodes.removeAll(cluster);
+            clusters.add(cluster);
+        }
+        System.out.println("Chain cluster stats");
+        System.out.println(clusters.stream().mapToInt(Set::size).summaryStatistics());
+        clusters.stream()
+                .map(Graph::orderChain)
+                .forEach(this::mergeNodes);
     }
 
     public static Graph parseGTFS(GtfsDaoImpl data, Collection<String> routenames) {
@@ -103,7 +190,9 @@ public class Graph {
                 .collect(Collectors.toSet());
 
         System.out.println("Routes collected: " + routes.size());
-        graph.routesIncluded = routes.stream().map(Route::getShortName).collect(Collectors.toList());
+        graph.routesIncluded = routes.stream()
+                .map(Route::getShortName)
+                .collect(Collectors.toList());
 
         Collection<Trip> trips = data.getAllTrips().stream()
                 .filter(x -> routes.contains(x.getRoute()))
@@ -117,13 +206,14 @@ public class Graph {
 
         Collection<Stop> stops = stoptimes.stream()
                 .map(StopTime::getStop)
-                .distinct()
+                .distinct() //Removes duplicate elements
                 .collect(Collectors.toList());
 
         System.out.println("Stops collected: " + stops.size());
 
         Map<Stop, Node> stopmap = new HashMap<>(stops.size());
-        stops.forEach(x -> stopmap.put(x, new Node(x.getName(), x.getLat(), x.getLon())));
+        stops.forEach(x -> stopmap.put(x,
+                new Node(++graph.idcounter, x.getName(), x.getLat(), x.getLon())));
 
         System.out.println("Stopmap built");
 
@@ -138,7 +228,7 @@ public class Graph {
                 .map(StopTime::getStop)
                 .reduce(null, (prev, curr) -> {
                     if (prev != null)
-                        stopmap.get(curr).getNeighbours().add(stopmap.get(prev));
+                        stopmap.get(curr).addNeighbour(stopmap.get(prev));
                     return curr;
                 }));
 
@@ -188,11 +278,20 @@ public class Graph {
         System.out.println("Transfer clusters merged, nodes remaining: " + graph.getNodes().size());
 
         graph.makeEdgesSymmetric();
+        //graph.removeStraps();
         System.out.println("Edges third pass");
 
         graph.removeDisconnected();
 
-        System.out.println("Graph removed disconnected components, nodes remaining: " + graph.getNodes().size());
+        System.out.println("Graph removed disconnected components, nodes remaining: "
+                + graph.getNodes().size());
+
+        //System.out.println("Pre-chain edge stats:");
+        //System.out.println(graph.getEdgeStats());
+
+        //graph.collapseChains();
+
+        //System.out.println("Graph collapsed chains, nodes remaining: " + graph.getNodes().size());
 
         return graph;
     }
