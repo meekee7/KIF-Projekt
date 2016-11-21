@@ -199,8 +199,7 @@ public class Graph {
             smallnodes.removeAll(cluster);
             clusters.add(cluster);
         }
-        //System.out.println("Chain cluster stats");
-        //System.out.println(clusters.stream().mapToInt(Set::size).summaryStatistics());
+        System.out.println("Chain cluster stats " + clusters.stream().mapToInt(Set::size).summaryStatistics());
         clusters.stream()
                 .map(Graph::orderChain)
                 .forEach(this::mergeNodes);
@@ -309,6 +308,7 @@ public class Graph {
         System.out.println("Edges third pass");
 
         graph.removeDisconnected();
+        graph.makeEdgesSymmetric();
 
         System.out.println("Graph removed disconnected components, nodes remaining: "
                 + graph.getNodes().size());
@@ -316,8 +316,14 @@ public class Graph {
         //System.out.println("Pre-chain edge stats:");
         //System.out.println(graph.getEdgeStats());
 
-        graph.collapseChains();
-        graph.makeEdgesSymmetric();
+        int curr = graph.getNodes().size();
+        int prev = Integer.MAX_VALUE;
+        while (curr < prev) { //Repeat until fixpoint is reached
+            prev = curr;
+            graph.collapseChains();
+            graph.makeEdgesSymmetric();
+            curr = graph.getNodes().size();
+        }
 
         System.out.println("Graph collapsed chains, nodes remaining: " + graph.getNodes().size());
 

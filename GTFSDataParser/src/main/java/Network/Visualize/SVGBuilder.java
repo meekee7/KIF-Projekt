@@ -51,8 +51,8 @@ public class SVGBuilder {
         double ytrans = -south;
 
         AffineTransform subtractmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, xtrans, ytrans);
-        AffineTransform scalemat = new AffineTransform(xscale, 0, 0, yscale, 0, 0);
-        AffineTransform bordertransmat = new AffineTransform(1, 0, 0, 1, 50, 50);
+        AffineTransform scalemat = new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
+        AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 50.0);
 
         this.matrix = new AffineTransform();
         this.matrix.setToIdentity();
@@ -60,7 +60,7 @@ public class SVGBuilder {
         this.matrix.concatenate(scalemat);
         this.matrix.concatenate(subtractmat);
 
-        System.out.println("Affine Matrix: " + this.matrix);
+        //System.out.println("Affine Matrix: " + this.matrix);
     }
 
     private Point2D transformPoint(Point2D point) {
@@ -83,11 +83,12 @@ public class SVGBuilder {
     private void drawNodes(Graphics2D canvas) {
         canvas.setPaint(Color.ORANGE);
         double radius = 5.0;
-        AffineTransform circlecoord = new AffineTransform(1.0, 0.0,
-                0.0, 1.0,
-                -radius / 2.0, -radius / 2.0);
-        System.out.println("Circlecoord: " + circlecoord);
-        this.graph.getNodes().forEach(node -> {
+        AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
+        this.graph.getNodes().forEach(node -> { //78.5 is the area of a circle with radius 5
+            /*
+            double radius = Math.sqrt((78.5 + Math.pow(node.getNeighbours().size()*2,2)) / Math.PI);
+            AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
+            */
             Point2D drawpoint = this.transformPoint(node.getPoint());
             circlecoord.transform(drawpoint, drawpoint);
             canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius, radius) {
@@ -101,7 +102,6 @@ public class SVGBuilder {
         canvas.setPaint(Color.ORANGE);
         canvas.fill(new Ellipse2D.Double(75, 75, 50, 50));
         canvas.fill(new Ellipse2D.Double(775, 775, 50, 50));
-
     }
 
     public void exportToSVG() {

@@ -17,8 +17,13 @@ public class CityFilter {
         return route.getAgency().getId().replaceAll("-", ""); //The GTFS lib puts dashes in the ID
     }
 
-    public static boolean Berlin(Route route) {
+    public static boolean BerlinStreet(Route route) {
         return getID(route).equals("BVB") || getID(route).equals("BVT");
+    }
+
+    public static boolean BerlinFull(Route route) {
+        return getID(route).equals("BVB") || getID(route).equals("BVT") ||
+                getID(route).equals("BVU") || getID(route).equals("SEV");
     }
 
     public static boolean Potsdam(Route route) {
