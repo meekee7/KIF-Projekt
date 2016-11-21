@@ -2,6 +2,7 @@ package Network;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import java.awt.geom.Point2D;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -11,11 +12,15 @@ import java.util.stream.Collectors;
  * Created by micha on 01.11.2016.
  */
 public class Node {
-    protected final int id;
-    protected final String name;
-    protected final double lat;
-    protected final double lon;
-    protected final Set<Node> neighbours;
+    protected int id;
+    protected String name;
+    protected double lat;
+    protected double lon;
+    protected Set<Node> neighbours = new HashSet<>();
+
+    public Node() {
+
+    }
 
     public Node(int id, String name, double lat, double lon) {
         this.id = id;
@@ -45,6 +50,22 @@ public class Node {
         return lon;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLat(double lat) {
+        this.lat = lat;
+    }
+
+    public void setLon(double lon) {
+        this.lon = lon;
+    }
+
     public Set<Node> getNeighbours() {
         return neighbours;
     }
@@ -59,6 +80,10 @@ public class Node {
                 .filter(x -> x != this)
                 .collect(Collectors.toList()
                 ));
+    }
+
+    public Point2D getPoint() {
+        return new Point2D.Double(this.lat, this.lon);
     }
 
     @Override

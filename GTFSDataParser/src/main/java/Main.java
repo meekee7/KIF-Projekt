@@ -1,5 +1,6 @@
 import Network.Graph;
 import Network.GraphIO;
+import Network.Visualize.SVGBuilder;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -11,9 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.sql.Time;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +26,7 @@ import java.util.stream.Collectors;
  */
 public class Main {
     public static void main(String[] args) {
+/*
         GtfsReader reader = new GtfsReader();
         GtfsDaoImpl data = new GtfsDaoImpl();
         reader.setEntityStore(data);
@@ -34,26 +40,22 @@ public class Main {
 
         MyLogger.l.info("Start " + ZonedDateTime.now());
 
-        Graph graph = Graph.parseGTFS(data, //Arrays.asList("U2", "U6")
-                data.getAllRoutes().stream().map(Route::getShortName).collect(Collectors.toList())
+        List<String> testnames =Arrays.asList("U4", "U2");
+        //System.out.println("Start " + entry.getKey());
+        Graph graph = Graph.parseGTFS(data, "GraphicsTest", x -> testnames.contains(x.getShortName())
         );
+*/
+        Graph graph = GraphIO.read("VBB-Daten/Potsdam.xml");
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));
-        MyLogger.l.info("End " + ZonedDateTime.now());
+        //MyLogger.l.info("End " + ZonedDateTime.now());
         MyLogger.l.info("Edge stats " + graph.getEdgeStats());
         //graph.collapseChains();
         //MyLogger.l.info("Largest nodes: ");
         //graph.getNodes().stream().sorted((x, y) -> y.getNeighbours().size() - x.getNeighbours().size()).limit(20).forEach(System.err::println);
+        //GraphIO.write(graph, "GraphicsTest");
+        //System.out.println("Finished " + "GraphicsTest");
 
-
-        try {
-            Path path = Paths.get("TestOutput.xml");
-            if (!Files.exists(path))
-                Files.createFile(path);
-            GraphIO.getMarshaller().marshal(graph, Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
-        } catch (JAXBException | IOException e) {
-            MyLogger.l.error(e.toString());
-        }
-
+        new SVGBuilder(graph,"PotsdamSVG").exportToSVG();
     }
 }

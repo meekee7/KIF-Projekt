@@ -3,10 +3,12 @@ package Network;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -15,8 +17,24 @@ import java.util.stream.Collectors;
 @XmlRootElement
 public class Graph {
     private Collection<Node> nodes = new HashSet<>();
-    private Collection<String> routesIncluded = Collections.EMPTY_LIST;
+    private Collection<String> routesIncluded = new ArrayList<>();
+    private Collection<Edge> edges = new HashSet<>();
+    private String name;
+
+    @XmlAttribute
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     private int idcounter = 0;
+
+    public Graph() {
+        System.out.println("Graph constructor");
+    }
 
     /**
      * This method makes all one-directional links in the graph bidirectional.
@@ -85,15 +103,13 @@ public class Graph {
             components.add(component);
         }
 
-        Collection<Node> max = components.stream()
-                .max((x, y) -> x.size() - y.size())
-                .get();
-
         //components.remove(max);
         //System.out.println("Disconnected: " + components.size());
         //components.forEach(System.out::println);
 
-        this.nodes = max;
+        this.nodes = components.stream()
+                .max((x, y) -> x.size() - y.size())
+                .get();
         //this.nodes = components.stream()
         //.max((x, y) -> x.size() - y.size())
         //        .get();
@@ -115,23 +131,33 @@ public class Graph {
         return routesIncluded;
     }
 
+    /**
+     * This method . Note that this edge set is recreated every time this method is called.
+     *
+     * @return A collection of all edges in the graph.
+     */
     @XmlElementWrapper(name = "edges")
     @XmlElement(name = "e")
-    public Set<Edge> getEdges() {
-        Set<Edge> edges = new HashSet<>(this.getNodes().size() * 2);
+    public Collection<Edge> getEdges() {
         this.nodes.forEach(x ->
                 x.getNeighbours().forEach(y ->
                         edges.add(new Edge(x.id, y.id))
                 )
         );
-        return edges;
+        return this.edges;
     }
 
-    public void setEdges(Set<Edge> edges) {
+    /**
+     * This method is a helper for GraphIO. Because JAXB will use the getter above
+     * and just use addAll on the collection GraphIO needs to integrate the edge
+     * data into the nodes.
+     */
+    void setEdges() {
+        System.out.println("Setting edges");
         this.nodes.forEach(x -> x.getNeighbours().clear());
         Map<Integer, Node> nodemap = new HashMap<>(this.nodes.size());
         this.nodes.forEach(x -> nodemap.put(x.id, x));
-        edges.forEach(edge -> {
+        this.edges.forEach(edge -> {
             nodemap.get(edge.getA()).addNeighbour(nodemap.get(edge.getB()));
             nodemap.get(edge.getB()).addNeighbour(nodemap.get(edge.getA()));
         });
@@ -173,23 +199,24 @@ public class Graph {
             smallnodes.removeAll(cluster);
             clusters.add(cluster);
         }
-        System.out.println("Chain cluster stats");
-        System.out.println(clusters.stream().mapToInt(Set::size).summaryStatistics());
+        //System.out.println("Chain cluster stats");
+        //System.out.println(clusters.stream().mapToInt(Set::size).summaryStatistics());
         clusters.stream()
                 .map(Graph::orderChain)
                 .forEach(this::mergeNodes);
     }
 
-    public static Graph parseGTFS(GtfsDaoImpl data, Collection<String> routenames) {
+    public static Graph parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
         Graph graph = new Graph();
+        graph.name = name;
 
         System.out.println("Graph building start");
 
         Collection<Route> routes = data.getAllRoutes().stream()
-                .filter(x -> routenames.contains(x.getShortName()))
-                .collect(Collectors.toSet());
+                .filter(routepredicate)
+                .collect(Collectors.toList());
 
-        System.out.println("Routes collected: " + routes.size());
+        System.out.println("Routes included: " + routes.size());
         graph.routesIncluded = routes.stream()
                 .map(Route::getShortName)
                 .collect(Collectors.toList());
@@ -289,9 +316,10 @@ public class Graph {
         //System.out.println("Pre-chain edge stats:");
         //System.out.println(graph.getEdgeStats());
 
-        //graph.collapseChains();
+        graph.collapseChains();
+        graph.makeEdgesSymmetric();
 
-        //System.out.println("Graph collapsed chains, nodes remaining: " + graph.getNodes().size());
+        System.out.println("Graph collapsed chains, nodes remaining: " + graph.getNodes().size());
 
         return graph;
     }

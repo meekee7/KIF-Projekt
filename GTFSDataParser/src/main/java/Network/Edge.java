@@ -10,15 +10,14 @@ public class Edge {
     private int a;
     private int b;
 
+    public Edge() {
+        this.a = -1;
+        this.b = -1;
+    }
+
     public Edge(int a, int b) {
-        if (a < b) {
-            this.a = a;
-            this.b = b;
-        }
-        else {
-            this.b = a;
-            this.a = b;
-        }
+        this.a = Math.min(a,b);
+        this.b = Math.max(a,b);
     }
 
     @XmlAttribute
@@ -29,6 +28,14 @@ public class Edge {
     @XmlAttribute
     public int getB() {
         return b;
+    }
+
+    public void setA(int a) {
+        this.a = a;
+    }
+
+    public void setB(int b) {
+        this.b = b;
     }
 
     /**
