@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,6 @@ public class Graph {
     private int idcounter = 0;
 
     public Graph() {
-        System.out.println("Graph constructor");
     }
 
     /**
@@ -132,7 +132,7 @@ public class Graph {
     }
 
     /**
-     * This method . Note that this edge set is recreated every time this method is called.
+     * This method TODO. Note that this edge set is recreated every time this method is called.
      *
      * @return A collection of all edges in the graph.
      */

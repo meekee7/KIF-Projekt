@@ -1,59 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bootstrap - Prebuilt Layout</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap - Prebuilt Layout</title>
 
-<!-- Bootstrap -->
-<link href="css/bootstrap.css" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.css" rel="stylesheet">
 
-<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-<!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 </head>
 <body>
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-md-6 col-md-offset-3">
-      <h1 class="text-center">GraphViewer</h1>
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <h1 class="text-center">GraphViewer</h1>
+        </div>
     </div>
-  </div>
-  <hr>
-	<div class="row text-center">
-		<button onClick="switchImage(this.id)" id="VBB" class="btn btn-lg btn-primary">VBB</button>
-		<button onClick="switchImage(this.id)" id="BerlinStreet" class="btn btn-lg btn-danger">BerlinStreet</button>
-		<button onClick="switchImage(this.id)" id="BerlinFull" class="btn btn-lg btn-primary">BerlinFull</button>
-		<button onClick="switchImage(this.id)" id="Brandenburg" class="btn btn-lg btn-primary">Brandenburg</button>
-		<button onClick="switchImage(this.id)" id="Cottbus" class="btn btn-lg btn-primary">Cottbus</button>
-		<button onClick="switchImage(this.id)" id="Frankfurt" class="btn btn-lg btn-primary">Frankfurt</button>
-		<button onClick="switchImage(this.id)" id="Potsdam" class="btn btn-lg btn-primary">Potsdam</button>
-		<button onClick="switchImage(this.id)" id="SmallTest" class="btn btn-lg btn-primary">SmallTest</button>
+    <hr>
+    <div class="row text-center">
+        <button onClick="switchImage(this.id)" id="VBB" class="btn btn-lg btn-primary" 
+        title="9929 Nodes, 17388 Edges">VBB</button>
+        <button onClick="switchImage(this.id)" id="BerlinStreet" class="btn btn-lg btn-danger"
+        title="1836 Nodes, 2645 Edges">BerlinStreet</button>
+        <button onClick="switchImage(this.id)" id="BerlinFull" class="btn btn-lg btn-primary"
+        title="1878 Nodes, 2817 Edges">BerlinFull</button>
+        <button onClick="switchImage(this.id)" id="Brandenburg" class="btn btn-lg btn-primary"
+        title="104 Nodes, 152 Edges">Brandenburg</button>
+        <button onClick="switchImage(this.id)" id="Cottbus" class="btn btn-lg btn-primary"
+        title="369 Nodes, 581 Edges">Cottbus</button>
+        <button onClick="switchImage(this.id)" id="Frankfurt" class="btn btn-lg btn-primary"
+        title="126 Nodes, 210 Edges">Frankfurt</button>
+        <button onClick="switchImage(this.id)" id="Potsdam" class="btn btn-lg btn-primary"
+        title="154 Nodes, 211 Edges">Potsdam</button>
+        <button onClick="switchImage(this.id)" id="SmallTest" class="btn btn-lg btn-primary"
+        title="6 Nodes, 5 Edges">SmallTest</button>
+    </div>
+	<hr>
+	<div id="Infotext" class="row text-center">
+		1836 Nodes, 5290 Edges
 	</div>
-  <hr>
-  <div class="row text-center">
-  		<img id="ImageHolder" src="../VBB-Daten/BerlinStreetSVG.svg" width="1000" height="1000">
-  </div>
+    <hr>
+    <div class="row text-center">
+       <object id="ImageHolder" type="image/svg+xml" data="../VBB-Daten/BerlinStreetSVG.svg" width="1000" height="1000">
+		</object>
+    </div>
 </div>
-	<script>
-		function switchImage(caller){
-			var buttons = ["VBB", "BerlinStreet", "BerlinFull", "Brandenburg", "Cottbus", "Frankfurt", "Potsdam", "SmallTest"];
-			
-			for (var i = 0; i<buttons.length; i++)
-				document.getElementById(buttons[i]).setAttribute("class", "btn btn-lg btn-primary");
-			document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
-			var file = "../VBB-Daten/" + caller + "SVG.svg";
-			document.getElementById("ImageHolder").setAttribute("src", file);
-		}
-	</script>
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) --> 
+<script>
+    function switchImage(caller) {
+        var buttons = ["VBB", "BerlinStreet", "BerlinFull", "Brandenburg", "Cottbus", "Frankfurt", "Potsdam", "SmallTest"];
+        for (var i = 0; i < buttons.length; i++)
+            document.getElementById(buttons[i]).setAttribute("class", "btn btn-lg btn-primary");
+        document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
+        var file = "../VBB-Daten/" + caller + "SVG.svg";
+        document.getElementById("ImageHolder").setAttribute("data", file);
+		document.getElementById("Infotext").innerHTML = document.getElementById(caller).getAttribute("title");
+    }
+</script>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="js/jquery-1.11.3.min.js"></script>
 
-<!-- Include all compiled plugins (below), or include individual files as needed --> 
+<!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="js/bootstrap.js"></script>
 </body>
 </html>

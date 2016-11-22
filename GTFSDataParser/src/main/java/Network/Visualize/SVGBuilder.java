@@ -82,8 +82,8 @@ public class SVGBuilder {
 
     private void drawNodes(Graphics2D canvas) {
         canvas.setPaint(Color.ORANGE);
-        double radius = 5.0;
-        AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
+        double radius = 2.5;
+        AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius, -radius);
         this.graph.getNodes().forEach(node -> { //78.5 is the area of a circle with radius 5
             /*
             double radius = Math.sqrt((78.5 + Math.pow(node.getNeighbours().size()*2,2)) / Math.PI);
@@ -91,8 +91,8 @@ public class SVGBuilder {
             */
             Point2D drawpoint = this.transformPoint(node.getPoint());
             circlecoord.transform(drawpoint, drawpoint);
-            canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius, radius) {
-            });
+            canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0)
+            );
         });
     }
 
