@@ -49,16 +49,16 @@ public class Main {
             Graph graph = new Graph();
             graph.parseGTFS(data, name, entry.getValue());
             System.out.println("Edge stats " + graph.getEdgeStats());
-            GraphIO.write(graph, "GraphViewer/Data/" + name);
-            new SVGBuilder(graph, "GraphViewer/Data/" + name + "SVG").exportToSVG();
+            GraphIO.write(graph, "GraphViewer/data/" + name);
+            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
             graphs.add(graph);
             System.out.println("-- END " + entry.getKey() + " --");
         });
         try {
-            Files.write(Paths.get("GraphViewer/Data/Stats.js"), StatJSON.buildStatsJS(graphs.stream()
+            Files.write(Paths.get("GraphViewer/data/Stats.js"), StatJSON.buildStatsJS(graphs.stream()
                     .sorted((x, y) -> y.getNodes().size() - x.getNodes().size()).collect(Collectors.toList())).getBytes());
-            System.out.println("Wrote file GraphViewer/Data/Stats.js");
+            System.out.println("Wrote file GraphViewer/data/Stats.js");
         } catch (IOException e) {
             e.printStackTrace();
         }

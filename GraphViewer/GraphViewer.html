@@ -40,14 +40,16 @@
     </div>
     <hr>
     <div class="row text-center">
+        <!--
         <iframe id="ImageHolder" width="1000" height="1000">
 
         </iframe>
-        <!--
+        -->
+
         <object id="ImageHolder" type="image/svg+xml" width="1000"
                 height="1000">
         </object>
-        -->
+
     </div>
 </div>
 <script src="./data/Stats.js"></script>
@@ -92,8 +94,8 @@
             document.getElementById(stats[i].Name).setAttribute("class", "btn btn-lg btn-primary");
         document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
         var file = "./data/" + caller + "SVG.svg";
-        document.getElementById("ImageHolder").setAttribute("src", file);
-        //document.getElementById("ImageHolder").setAttribute("data", file);
+        //document.getElementById("ImageHolder").setAttribute("src", file);
+        document.getElementById("ImageHolder").setAttribute("data", file);
         document.getElementById("Infotext").innerHTML = document.getElementById(caller).getAttribute("title");
         applyVisibility();
     }
