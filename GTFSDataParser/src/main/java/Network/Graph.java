@@ -1,5 +1,7 @@
 package Network;
 
+import Network.LineMaking.NeighbourNode;
+import Network.LineMaking.UnitableLines;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
@@ -8,7 +10,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ public class Graph {
     private Collection<Node> nodes = new HashSet<>();
     private Collection<String> routesIncluded = new ArrayList<>();
     private Collection<Edge> edges = new HashSet<>();
+    private Collection<Line> lines = new HashSet<>();
     private String name;
 
     @XmlAttribute
@@ -31,7 +33,8 @@ public class Graph {
         this.name = name;
     }
 
-    private int idcounter = 0;
+    private int nodeidcounter = 0;
+    private int lineidcounter = 0;
 
     public Graph() {
     }
@@ -55,19 +58,15 @@ public class Graph {
     }
 
     public void mergeNodes(Collection<Node> tomerge) {
-        Optional<Node> minopt = tomerge.stream()
-                .min((x, y) ->
-                        x.getName().length() - y.getName().length());
-
-        if (!minopt.isPresent())
+        if (tomerge.isEmpty())
             return;
-        Node min = minopt.get();
+        Optional<Node> minopt = tomerge.stream()
+                .min(Comparator.comparingInt(x -> x.getName().length()));
 
+        Node min = minopt.get();
         tomerge.remove(min);
-        tomerge.forEach(x -> min.addNeighbours(x.getNeighbours())); //Absorb all neighbours
-        min.getNeighbours().forEach(x -> x.addNeighbour(x)); //Become neighbour for all neighbours
+        tomerge.forEach(min::absorbNode);
         this.nodes.removeAll(tomerge);
-        this.nodes.forEach(x -> x.getNeighbours().removeAll(tomerge)); //Forget all nodes that were removed
     }
 
     public boolean isConnected() {
@@ -108,7 +107,7 @@ public class Graph {
         //components.forEach(System.out::println);
 
         this.nodes = components.stream()
-                .max((x, y) -> x.size() - y.size())
+                .max(Comparator.comparingInt(Collection::size))
                 .get();
         //this.nodes = components.stream()
         //.max((x, y) -> x.size() - y.size())
@@ -132,7 +131,10 @@ public class Graph {
     }
 
     /**
-     * This method TODO. Note that this edge set is recreated every time this method is called.
+     * This method returns a set of edges in the graph.
+     * Note that this edge set is recreated every time this method is called.
+     * The set you receive is not maintained.
+     * This method exists for IO purposes and is not intended for computational usage.
      *
      * @return A collection of all edges in the graph.
      */
@@ -141,10 +143,16 @@ public class Graph {
     public Collection<Edge> getEdges() {
         this.nodes.forEach(x ->
                 x.getNeighbours().forEach(y ->
-                        edges.add(new Edge(x.id, y.id))
+                        this.edges.add(new Edge(x.id, y.id))
                 )
         );
         return this.edges;
+    }
+
+    @XmlElementWrapper(name = "lines")
+    @XmlElement(name = "l")
+    public Collection<Line> getLines() {
+        return lines;
     }
 
     /**
@@ -152,8 +160,8 @@ public class Graph {
      * and just use addAll on the collection GraphIO needs to integrate the edge
      * data into the nodes.
      */
-    void setEdges() {
-        System.out.println("Setting edges");
+    public void postIOIntegration() {
+        System.out.println("Graph post-IO integration");
         this.nodes.forEach(x -> x.getNeighbours().clear());
         Map<Integer, Node> nodemap = new HashMap<>(this.nodes.size());
         this.nodes.forEach(x -> nodemap.put(x.id, x));
@@ -161,6 +169,8 @@ public class Graph {
             nodemap.get(edge.getA()).addNeighbour(nodemap.get(edge.getB()));
             nodemap.get(edge.getB()).addNeighbour(nodemap.get(edge.getA()));
         });
+        this.lines.forEach(x -> x.postIOIntegration(nodemap));
+        this.lines.forEach(x -> x.getStops().forEach(y -> y.getLines().add(x)));
     }
 
     private static void walkSmallNode(Set<Node> target, Node node) {
@@ -170,7 +180,7 @@ public class Graph {
         node.getNeighbours().forEach(x -> walkSmallNode(target, x));
     }
 
-    private static List<Node> orderChain(Set<Node> cluster) {
+    private List<Node> orderChain(Set<Node> cluster) {
         List<Node> chain = new ArrayList<>(cluster.size());
         while (!cluster.isEmpty()) {
             Node node = cluster.stream()
@@ -201,13 +211,12 @@ public class Graph {
         }
         System.out.println("Chain cluster stats " + clusters.stream().mapToInt(Set::size).summaryStatistics());
         clusters.stream()
-                .map(Graph::orderChain)
+                .map(this::orderChain)
                 .forEach(this::mergeNodes);
     }
 
-    public static Graph parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
-        Graph graph = new Graph();
-        graph.name = name;
+    public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
+        this.name = name;
 
         System.out.println("Graph building start");
 
@@ -216,7 +225,7 @@ public class Graph {
                 .collect(Collectors.toList());
 
         System.out.println("Routes included: " + routes.size());
-        graph.routesIncluded = routes.stream()
+        this.routesIncluded = routes.stream()
                 .map(Route::getShortName)
                 .collect(Collectors.toList());
 
@@ -239,7 +248,7 @@ public class Graph {
 
         Map<Stop, Node> stopmap = new HashMap<>(stops.size());
         stops.forEach(x -> stopmap.put(x,
-                new Node(++graph.idcounter, x.getName(), x.getLat(), x.getLon())));
+                new Node(++this.nodeidcounter, x.getName(), x.getLat(), x.getLon())));
 
         System.out.println("Stopmap built");
 
@@ -250,7 +259,7 @@ public class Graph {
         System.out.println("Tripmap built");
 
         trips.forEach(trip -> tripmap.get(trip).stream()
-                .sorted((x, y) -> x.getStopSequence() - y.getStopSequence())
+                .sorted(Comparator.comparingInt(StopTime::getStopSequence))
                 .map(StopTime::getStop)
                 .reduce(null, (prev, curr) -> {
                     if (prev != null)
@@ -260,8 +269,8 @@ public class Graph {
 
         System.out.println("Edges first pass");
 
-        graph.getNodes().addAll(stopmap.values());
-        graph.makeEdgesSymmetric();
+        this.getNodes().addAll(stopmap.values());
+        this.makeEdgesSymmetric();
 
         System.out.println("Edges second pass");
 
@@ -299,34 +308,101 @@ public class Graph {
                         .filter(stops::contains)
                         .map(stopmap::get)
                         .collect(Collectors.toList())
-                ).forEach(graph::mergeNodes);
+                ).forEach(this::mergeNodes);
 
-        System.out.println("Transfer clusters merged, nodes remaining: " + graph.getNodes().size());
+        System.out.println("Transfer clusters merged, nodes remaining: " + this.getNodes().size());
 
-        graph.makeEdgesSymmetric();
+        this.makeEdgesSymmetric();
         //graph.removeStraps();
         System.out.println("Edges third pass");
 
-        graph.removeDisconnected();
-        graph.makeEdgesSymmetric();
+        this.removeDisconnected();
+        this.makeEdgesSymmetric();
 
         System.out.println("Graph removed disconnected components, nodes remaining: "
-                + graph.getNodes().size());
+                + this.getNodes().size());
 
         //System.out.println("Pre-chain edge stats:");
         //System.out.println(graph.getEdgeStats());
 
-        int curr = graph.getNodes().size();
+        int curr = this.getNodes().size();
         int prev = Integer.MAX_VALUE;
         while (curr < prev) { //Repeat until fixpoint is reached
             prev = curr;
-            graph.collapseChains();
-            graph.makeEdgesSymmetric();
-            curr = graph.getNodes().size();
+            this.collapseChains();
+            this.makeEdgesSymmetric();
+            curr = this.getNodes().size();
         }
 
-        System.out.println("Graph collapsed chains, nodes remaining: " + graph.getNodes().size());
+        System.out.println("Graph collapsed chains, nodes remaining: " + this.getNodes().size());
+    }
 
-        return graph;
+    public void buildLines() {
+        Random random = new Random(345345234L); //Arbitrary value
+        for (int i = 0; i < 4; i++) {
+            //while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
+            Collection<Node> singles = this.getNodes().stream()
+                    .filter(x -> x.getLines().isEmpty())
+                    .filter(x -> x.getNeighbours().stream()
+                            .filter(y -> y.getLines().isEmpty())
+                            .count() <= 1
+                    ).collect(Collectors.toList());
+            if (!singles.isEmpty())
+                singles.forEach(x -> this.lines.add(new Line(++this.lineidcounter, x)));
+            else {
+                List<Node> nearline = this.getNodes().stream().filter(x -> x.getLines().isEmpty())
+                        .filter(x -> x.getNeighbours().stream()
+                                .anyMatch(y -> !y.getLines().isEmpty())).collect(Collectors.toList());
+                java.util.Collections.shuffle(nearline, random);
+                nearline = nearline.subList(0, Math.min(nearline.size(), 5));
+                nearline.forEach(x -> {
+                    Line line = new Line(++this.lineidcounter, x.getNeighbours().stream()
+                            .filter(y -> !y.getLines().isEmpty())
+                            .findFirst().get());
+                    this.lines.add(line);
+                    line.addToEnd(x);
+                });
+            }
+            this.lines.forEach(line -> line.getStartAndEnd().forEach(x ->
+                            x.getNeighbours().stream()
+                                    .filter(y -> y.getLines().isEmpty()).findFirst()
+                                    .ifPresent(node -> line.addToPlace(node, x))
+                    //TODO maybe find an adequate heuristic
+            ));
+            Set<UnitableLines> unitable = new HashSet<>();
+            this.getNodes().forEach(node -> {
+                List<Line> endlines = node.getEndLines().stream()
+                        .sorted(Comparator.comparingInt(x -> x.getStops().size()))
+                        .collect(Collectors.toList());
+                if (endlines.size() >= 2)
+                    unitable.add(new UnitableLines(endlines.get(0), endlines.get(1),
+                            node));
+                else {
+                    List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
+                            .map(x -> new NeighbourNode(x, node))
+                            .filter(NeighbourNode::isValid)
+                            .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
+                            .collect(Collectors.toList());
+                    if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
+                        Line myline = endlines.get(0);
+                        Line otherline = neighbourswithends.get(0).getMinline();
+                        System.out.println(myline.getStops());
+                        System.out.println(otherline.getStops());
+                        System.out.println(node);
+                        otherline.addFitting(node);
+                        System.out.println(otherline.getStops());
+                        System.out.println(" ------------ ");
+                        UnitableLines ul = new UnitableLines(myline, otherline, node);
+                        if (!unitable.contains(ul))
+                            unitable.add(ul);
+                        else
+                            System.out.println("contained");
+                    } else if (neighbourswithends.size() >= 2) {
+                        //TODO
+                    }
+                }
+            });
+            unitable.forEach(x -> x.getA().absorbLine(x.getB(), x.getMergepoint()));
+        }
     }
 }

@@ -1,4 +1,4 @@
-package Network.Visualize;
+package Network.IO;
 
 import Network.Graph;
 import Network.Node;
@@ -27,44 +27,11 @@ import java.util.Map;
 public class SVGBuilder {
     private Graph graph;
     private String name;
-    private AffineTransform matrix;
+    private CoordTransform transform;
 
     public SVGBuilder(Graph graph, String name) {
         this.graph = graph;
         this.name = name;
-    }
-
-    private void calcCoordinateRange() {
-        DoubleSummaryStatistics westeast = this.graph.getNodes().stream().mapToDouble(Node::getLat).summaryStatistics();
-        double west = westeast.getMin();
-        double east = westeast.getMax();
-        DoubleSummaryStatistics northsouth = this.graph.getNodes().stream().mapToDouble(Node::getLon).summaryStatistics();
-        double north = northsouth.getMax();
-        double south = northsouth.getMin();
-
-        System.out.println("North: " + north + " South: " + south + " East: " + east + " West: " + west);
-
-        double xscale = 800.0 / (Math.abs(east - west));
-        double yscale = 800.0 / (Math.abs(north - south));
-
-        double xtrans = -west;
-        double ytrans = -south;
-
-        AffineTransform subtractmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, xtrans, ytrans);
-        AffineTransform scalemat = new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
-        AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 50.0);
-
-        this.matrix = new AffineTransform();
-        this.matrix.setToIdentity();
-        this.matrix.concatenate(bordertransmat);
-        this.matrix.concatenate(scalemat);
-        this.matrix.concatenate(subtractmat);
-
-        //System.out.println("Affine Matrix: " + this.matrix);
-    }
-
-    private Point2D transformPoint(Point2D point) {
-        return this.matrix.transform(point, new Point2D.Double());
     }
 
     private void drawEdges(Graphics2D canvas) {
@@ -74,8 +41,8 @@ public class SVGBuilder {
         canvas.setStroke(new BasicStroke(2.0f));
         this.graph.getEdges().forEach(edge ->
                 canvas.draw(new Line2D.Double(
-                        this.transformPoint(nodemap.get(edge.getA()).getPoint()),
-                        this.transformPoint(nodemap.get(edge.getB()).getPoint())
+                        this.transform.transformPoint(nodemap.get(edge.getA()).getPoint()),
+                        this.transform.transformPoint(nodemap.get(edge.getB()).getPoint())
                 ))
         );
     }
@@ -89,7 +56,7 @@ public class SVGBuilder {
             double radius = Math.sqrt((78.5 + Math.pow(node.getNeighbours().size()*2,2)) / Math.PI);
             AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
             */
-            Point2D drawpoint = this.transformPoint(node.getPoint());
+            Point2D drawpoint = this.transform.transformPoint(node.getPoint());
             circlecoord.transform(drawpoint, drawpoint);
             canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0)
             );
@@ -109,7 +76,7 @@ public class SVGBuilder {
         Document doc = domImpl.createDocument("http://www.w3.org/2000/svg", "svg", null);
         SVGGraphics2D svggen = new SVGGraphics2D(doc);
         //this.testDraw(svggen);
-        this.calcCoordinateRange();
+        this.transform = new CoordTransform(this.graph);
         this.drawEdges(svggen);
         this.drawNodes(svggen);
 

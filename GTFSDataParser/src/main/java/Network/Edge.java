@@ -16,8 +16,8 @@ public class Edge {
     }
 
     public Edge(int a, int b) {
-        this.a = Math.min(a,b);
-        this.b = Math.max(a,b);
+        this.a = Math.min(a, b);
+        this.b = Math.max(a, b);
     }
 
     @XmlAttribute

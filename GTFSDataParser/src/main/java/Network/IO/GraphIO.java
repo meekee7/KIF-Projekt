@@ -1,4 +1,6 @@
-package Network;
+package Network.IO;
+
+import Network.Graph;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -36,7 +38,8 @@ public class GraphIO {
             filename += ".xml";
         try {
             Graph graph = (Graph) GraphIO.getUnmarshaller().unmarshal(new File(filename));
-            graph.setEdges();
+            graph.postIOIntegration();
+            System.out.println("Read file " + filename);
             return graph;
         } catch (Exception e) {
             e.printStackTrace();
@@ -53,6 +56,7 @@ public class GraphIO {
             if (!Files.exists(path))
                 Files.createFile(path);
             GraphIO.getMarshaller().marshal(graph, Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
+            System.out.println("Wrote file " + filename);
         } catch (JAXBException | IOException e) {
             e.printStackTrace();
             System.exit(1);

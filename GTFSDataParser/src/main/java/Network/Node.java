@@ -3,9 +3,7 @@ package Network;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.awt.geom.Point2D;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -17,9 +15,9 @@ public class Node {
     protected double lat;
     protected double lon;
     protected Set<Node> neighbours = new HashSet<>();
+    protected Set<Line> lines = new HashSet<>();
 
     public Node() {
-
     }
 
     public Node(int id, String name, double lat, double lon) {
@@ -76,14 +74,28 @@ public class Node {
     }
 
     public void addNeighbours(Collection<Node> newneighbours) {
-        this.neighbours.addAll(newneighbours.stream()
-                .filter(x -> x != this)
-                .collect(Collectors.toList()
-                ));
+        this.neighbours.addAll(newneighbours);
+        this.neighbours.remove(this);
+    }
+
+    public void absorbNode(Node other) {
+        if (other.name.length() < this.name.length())
+            this.name = other.name;
+        this.addNeighbours(other.neighbours);
+        this.neighbours.forEach(x -> x.addNeighbour(this));
+        other.neighbours.forEach(x -> x.neighbours.remove(other));
     }
 
     public Point2D getPoint() {
         return new Point2D.Double(this.lat, this.lon);
+    }
+
+    public Set<Line> getLines() {
+        return lines;
+    }
+
+    public List<Line> getEndLines() {
+        return this.lines.stream().filter(x -> x.getStartAndEnd().contains(this)).collect(Collectors.toList());
     }
 
     @Override
