@@ -82,7 +82,13 @@ public class Line {
             throw new IllegalArgumentException("Node does not fit at start or end");
     }
 
+    public boolean canAbsorb(Line other, Node mergenode) {
+        return this.getStops().stream().allMatch(x -> mergenode == x || !other.getStops().contains(x));
+    }
+
     public void absorbLine(Line other, Node mergenode) {
+        if (!this.canAbsorb(other, mergenode))
+            throw new IllegalArgumentException("Cannot absorb other line");
         List<Node> othernodes = new LinkedList<>(other.getStops());
         if (this.getStart() == mergenode && other.getStart() == mergenode) {
             Collections.reverse(othernodes);
@@ -126,7 +132,7 @@ public class Line {
         this.stops = stops;
     }
 
-    @XmlElementWrapper(name = "stops")
+    //@XmlElementWrapper(name = "stops")
     @XmlElement(name = "s")
     public List<Integer> getStopIDs() {
         return stopIDs;

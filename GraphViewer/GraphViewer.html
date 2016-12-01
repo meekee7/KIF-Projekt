@@ -29,14 +29,16 @@
     </div>
     <br>
     <div class="row text-center">
-        <input class="checkbox checkbox-inline" checked="true" type="checkbox" onChange="setEdgesVisibility(this.checked)">Show Edges
-        <input class="checkbox checkbox-inline" checked="true" type="checkbox" onChange="setLinesVisibility(this.checked)">Show Lines
+        <input class="checkbox checkbox-inline" checked="true" type="checkbox"
+               onChange="setEdgesVisibility(this.checked)">Show Edges
+        <input class="checkbox checkbox-inline" checked="true" type="checkbox"
+               onChange="setLinesVisibility(this.checked)">Show Lines
         <input class="checkbox checkbox-inline" checked="true" type="checkbox"
                onChange="setNameVisibility(this.checked)">Show Node Names
     </div>
     <br>
     <div id="Infotext" class="row text-center">
-        <!-- asd -->
+        <!-- filled by the Javascript -->
     </div>
     <hr>
     <div class="row text-center">
@@ -86,7 +88,7 @@
         var svgdoc = document.getElementById("ImageHolder").contentDocument || document.getElementById("ImageHolder").contentWindow.document;
         var textnodes = svgdoc.getElementsByTagName("text");
         console.log("Preloop");
-        for (var i=0; i< textnodes.length; i++)
+        for (var i = 0; i < textnodes.length; i++)
             textnodes.item(i).setAttribute("visibility", shownodenames ? "visible" : "hidden");
     }
     function switchImage(caller) {
@@ -94,8 +96,10 @@
             document.getElementById(stats[i].Name).setAttribute("class", "btn btn-lg btn-primary");
         document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
         var file = "./data/" + caller + "SVG.svg";
-        //document.getElementById("ImageHolder").setAttribute("src", file);
-        document.getElementById("ImageHolder").setAttribute("data", file);
+        if (document.getElementById("ImageHolder").tagName == "iframe")
+            document.getElementById("ImageHolder").setAttribute("src", file);
+        else
+            document.getElementById("ImageHolder").setAttribute("data", file);
         document.getElementById("Infotext").innerHTML = document.getElementById(caller).getAttribute("title");
         applyVisibility();
     }

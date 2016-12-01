@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -380,10 +381,12 @@ public class Graph {
                                 .sorted(Comparator.comparingInt(x -> x.getStops().size()))
                                 .collect(Collectors.toList());
                         if (endlines.size() >= 2) {
-                            endlines.get(0).absorbLine(endlines.get(1), node);
-                            this.lines.remove(endlines.get(1));
-                            keepmerging = true;
-                            break loopcore;
+                            if (endlines.get(0).canAbsorb(endlines.get(1), node)) {
+                                endlines.get(0).absorbLine(endlines.get(1), node);
+                                this.lines.remove(endlines.get(1));
+                                keepmerging = true;
+                                break loopcore;
+                            }
                         } else {
                             List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
                                     .map(x -> new NeighbourNode(x, node))
@@ -394,11 +397,13 @@ public class Graph {
                                 Line myline = endlines.get(0);
                                 Line otherline = neighbourswithends.get(0).getMinline();
                                 otherline.addFitting(node);
-                                myline.absorbLine(otherline, node);
-                                this.lines.remove(otherline);
-                                keepmerging = true;
-                                break loopcore;
-                            } else if (neighbourswithends.size() >= 2) {
+                                if (myline.canAbsorb(otherline, node)) {
+                                    myline.absorbLine(otherline, node);
+                                    this.lines.remove(otherline);
+                                    keepmerging = true;
+                                    break loopcore;
+                                }
+                            } /*else if (neighbourswithends.size() >= 2 && false) {
                                 Line line1 = neighbourswithends.get(0).getMinline();
                                 Line line2 = neighbourswithends.get(1).getMinline();
                                 line1.addFitting(node);
@@ -407,12 +412,25 @@ public class Graph {
                                 this.lines.remove(line2);
                                 keepmerging = true;
                                 break loopcore;
-                            }
+                            }*/
                         }
                     }
                 }
-                new SVGBuilder(this, "Test"+(pic++)).exportToSVG();
+                //new SVGBuilder(this, "Test" + (pic++)).exportToSVG();
             }
+        }
+        AtomicInteger changed = new AtomicInteger(Integer.MAX_VALUE); //An object to bypass restrictions of lambdas
+        while (changed.intValue() != 0) {
+            changed.set(0);
+            this.nodes.stream()
+                    .filter(x -> x.getLines().size() == 1 && x.getEndLines().size() == 1)
+                    .forEach(node -> {
+                        Line line = node.getEndLines().get(0);
+                        node.getNeighbours().stream().filter(line::canAdd).findFirst().ifPresent(y -> {
+                            line.addFitting(y);
+                            changed.incrementAndGet();
+                        });
+                    });
         }
     }
 }

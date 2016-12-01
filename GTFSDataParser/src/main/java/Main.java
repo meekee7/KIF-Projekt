@@ -49,7 +49,8 @@ public class Main {
             Graph graph = new Graph();
             graph.parseGTFS(data, name, entry.getValue());
             System.out.println("Edge stats " + graph.getEdgeStats());
-            GraphIO.write(graph, "GraphViewer/data/" + name);
+            graph.buildLines();
+            GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
             graphs.add(graph);
@@ -98,13 +99,13 @@ public class Main {
 
         Main.buildAllGraphs();
 
-        /*
+/*
         Graph graph = GraphIO.read("VBB-Daten/Potsdam.xml");
         graph.buildLines();
         System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
         graph.getLines().forEach(x -> System.out.println(x.getStops()));
         new SVGBuilder(graph, "PotsdamWithLines").exportToSVG();
-        */
+*/
 
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));

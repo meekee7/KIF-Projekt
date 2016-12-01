@@ -62,7 +62,7 @@ public class SVGBuilder {
             this.canvas.setPaint(Color.ORANGE);
             this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
             this.canvas.setPaint(Color.BLACK);
-            this.canvas.drawString(node.getName(), (float) drawpoint.getX() + 20.0f, (float) drawpoint.getY());
+            //this.canvas.drawString(node.getName(), (float) drawpoint.getX() + 20.0f, (float) drawpoint.getY());
         });
     }
 
