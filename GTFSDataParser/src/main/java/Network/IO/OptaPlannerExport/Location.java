@@ -1,6 +1,5 @@
 package Network.IO.OptaPlannerExport;
 
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.awt.geom.Point2D;
@@ -13,14 +12,13 @@ public class Location {
     private int globalid;
     private double lat;
     private double lon;
-    private static int innerIDgiver = 0;
 
-    public Location(Point2D point){
-        this(point.getX(), point.getY());
+    public Location(Point2D point, int innerid){
+        this(point.getX(), point.getY(), innerid);
     }
 
-    public Location(double lat, double lon) {
-        this.innerid = innerIDgiver++;
+    public Location(double lat, double lon, int innerid) {
+        this.innerid = innerid;
         this.globalid = this.innerid + 3;
         this.lat = lat;
         this.lon = lon;

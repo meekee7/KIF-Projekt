@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by micha on 16.11.2016.
@@ -28,27 +29,27 @@ public class SVGBuilder {
     private Graph graph;
     private String name;
     private CoordTransform transform;
+    private Map<Integer, Node> nodemap;
+    private Graphics2D canvas;
 
     public SVGBuilder(Graph graph, String name) {
         this.graph = graph;
         this.name = name;
     }
 
-    private void drawEdges(Graphics2D canvas) {
-        Map<Integer, Node> nodemap = new HashMap<>(this.graph.getNodes().size());
-        this.graph.getNodes().forEach(x -> nodemap.put(x.getId(), x));
-        canvas.setPaint(Color.BLUE);
-        canvas.setStroke(new BasicStroke(2.0f));
+    private void drawEdges() {
+        this.canvas.setPaint(Color.BLUE);
+        this.canvas.setStroke(new BasicStroke(1.5f));
         this.graph.getEdges().forEach(edge ->
-                canvas.draw(new Line2D.Double(
-                        this.transform.transformPoint(nodemap.get(edge.getA()).getPoint()),
-                        this.transform.transformPoint(nodemap.get(edge.getB()).getPoint())
+                this.canvas.draw(new Line2D.Double(
+                        this.transform.transformPoint(this.nodemap.get(edge.getA()).getPoint()),
+                        this.transform.transformPoint(this.nodemap.get(edge.getB()).getPoint())
                 ))
         );
     }
 
-    private void drawNodes(Graphics2D canvas) {
-        canvas.setPaint(Color.ORANGE);
+    private void drawNodes() {
+        this.canvas.setPaint(Color.ORANGE);
         double radius = 2.5;
         AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius, -radius);
         this.graph.getNodes().forEach(node -> { //78.5 is the area of a circle with radius 5
@@ -58,31 +59,64 @@ public class SVGBuilder {
             */
             Point2D drawpoint = this.transform.transformPoint(node.getPoint());
             circlecoord.transform(drawpoint, drawpoint);
-            canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0)
-            );
+            this.canvas.setPaint(Color.ORANGE);
+            this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
+            this.canvas.setPaint(Color.BLACK);
+            this.canvas.drawString(node.getName(), (float) drawpoint.getX() + 20.0f, (float) drawpoint.getY());
         });
     }
 
-    private void testDraw(Graphics2D canvas) {
-        canvas.setPaint(Color.BLUE);
-        canvas.draw(new Line2D.Double(100, 100, 800, 800));
-        canvas.setPaint(Color.ORANGE);
-        canvas.fill(new Ellipse2D.Double(75, 75, 50, 50));
-        canvas.fill(new Ellipse2D.Double(775, 775, 50, 50));
+    private void drawCircleAt(Point2D p, double radius) {
+        AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius, -radius);
+        Point2D drawpoint = this.transform.transformPoint(p);
+        circlecoord.transform(drawpoint, drawpoint);
+        this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
+    }
+
+    private void drawLines() {
+        Random random = new Random(3498234L);
+        this.graph.getNodes().forEach(x -> nodemap.put(x.getId(), x));
+        this.canvas.setStroke(new BasicStroke(3.0f));
+        this.graph.getLines().forEach(line -> {
+            this.canvas.setPaint(new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)));
+            line.getStops().stream().reduce(null, (x, y) -> {
+                if (x != null) {
+                    this.canvas.draw(new Line2D.Double(
+                            this.transform.transformPoint(x.getPoint()),
+                            this.transform.transformPoint(y.getPoint())
+                    ));
+                }
+                return y;
+            });
+            line.getStartAndEnd().forEach(x -> this.drawCircleAt(x.getPoint(), 6.0));
+        });
+    }
+
+    private void testDraw() {
+        this.canvas.setPaint(Color.BLUE);
+        this.canvas.draw(new Line2D.Double(100, 100, 800, 800));
+        this.canvas.setPaint(Color.ORANGE);
+        this.canvas.fill(new Ellipse2D.Double(75, 75, 50, 50));
+        this.canvas.fill(new Ellipse2D.Double(775, 775, 50, 50));
     }
 
     public void exportToSVG() {
         DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
         Document doc = domImpl.createDocument("http://www.w3.org/2000/svg", "svg", null);
-        SVGGraphics2D svggen = new SVGGraphics2D(doc);
+        SVGGraphics2D canvas = new SVGGraphics2D(doc);
+        this.canvas = canvas;
         //this.testDraw(svggen);
         this.transform = new CoordTransform(this.graph);
-        this.drawEdges(svggen);
-        this.drawNodes(svggen);
+        this.nodemap = new HashMap<>(this.graph.getNodes().size());
+        this.graph.getNodes().forEach(x -> nodemap.put(x.getId(), x));
+
+        this.drawEdges();
+        this.drawLines();
+        this.drawNodes();
 
         Path path = Paths.get(this.name + ".svg");
         try (Writer w = new OutputStreamWriter(Files.newOutputStream(path), "UTF-8")) {
-            svggen.stream(w, true);
+            canvas.stream(w, true);
             System.out.println("Wrote SVG file " + path);
         } catch (Exception e) {
             e.printStackTrace();

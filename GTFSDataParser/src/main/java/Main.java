@@ -1,16 +1,19 @@
 import Network.Graph;
 import Network.IO.GraphIO;
+import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
+import Network.IO.StatJSON;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Created by micha on 01.11.2016.
@@ -39,16 +42,26 @@ public class Main {
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
+        List<Graph> graphs = new ArrayList<>(cityfilters.size());
         cityfilters.entrySet().forEach(entry -> {
             System.out.println("-- START " + entry.getKey() + " --");
             String name = entry.getKey();
             Graph graph = new Graph();
             graph.parseGTFS(data, name, entry.getValue());
             System.out.println("Edge stats " + graph.getEdgeStats());
-            GraphIO.write(graph, "VBB-Daten/" + name);
-            new SVGBuilder(graph, "VBB-Daten/" + name + "SVG").exportToSVG();
+            GraphIO.write(graph, "GraphViewer/Data/" + name);
+            new SVGBuilder(graph, "GraphViewer/Data/" + name + "SVG").exportToSVG();
+            new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
+            graphs.add(graph);
             System.out.println("-- END " + entry.getKey() + " --");
         });
+        try {
+            Files.write(Paths.get("GraphViewer/Data/Stats.js"), StatJSON.buildStatsJS(graphs.stream()
+                    .sorted((x, y) -> y.getNodes().size() - x.getNodes().size()).collect(Collectors.toList())).getBytes());
+            System.out.println("Wrote file GraphViewer/Data/Stats.js");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
@@ -82,10 +95,17 @@ public class Main {
         Graph graph = Graph.parseGTFS(data, "GraphicsTest", x -> testnames.contains(x.getShortName())
         );
 */
-        Graph graph = GraphIO.read("VBB-Daten/SmallTest.xml");
+
+        Main.buildAllGraphs();
+
+        /*
+        Graph graph = GraphIO.read("VBB-Daten/Potsdam.xml");
         graph.buildLines();
         System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
         graph.getLines().forEach(x -> System.out.println(x.getStops()));
+        new SVGBuilder(graph, "PotsdamWithLines").exportToSVG();
+        */
+
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));
         //MyLogger.l.info("End " + ZonedDateTime.now());

@@ -24,44 +24,83 @@
         </div>
     </div>
     <hr>
-    <div class="row text-center">
-        <button onClick="switchImage(this.id)" id="VBB" class="btn btn-lg btn-primary" 
-        title="9929 Nodes, 17388 Edges">VBB</button>
-        <button onClick="switchImage(this.id)" id="BerlinStreet" class="btn btn-lg btn-danger"
-        title="1836 Nodes, 2645 Edges">BerlinStreet</button>
-        <button onClick="switchImage(this.id)" id="BerlinFull" class="btn btn-lg btn-primary"
-        title="1878 Nodes, 2817 Edges">BerlinFull</button>
-        <button onClick="switchImage(this.id)" id="Brandenburg" class="btn btn-lg btn-primary"
-        title="104 Nodes, 152 Edges">Brandenburg</button>
-        <button onClick="switchImage(this.id)" id="Cottbus" class="btn btn-lg btn-primary"
-        title="369 Nodes, 581 Edges">Cottbus</button>
-        <button onClick="switchImage(this.id)" id="Frankfurt" class="btn btn-lg btn-primary"
-        title="126 Nodes, 210 Edges">Frankfurt</button>
-        <button onClick="switchImage(this.id)" id="Potsdam" class="btn btn-lg btn-primary"
-        title="154 Nodes, 211 Edges">Potsdam</button>
-        <button onClick="switchImage(this.id)" id="SmallTest" class="btn btn-lg btn-primary"
-        title="6 Nodes, 5 Edges">SmallTest</button>
+    <div id="buttonrow" class="row text-center">
+        <!-- filled by the Javascript -->
     </div>
-	<hr>
-	<div id="Infotext" class="row text-center">
-		1836 Nodes, 5290 Edges
-	</div>
+    <br>
+    <div class="row text-center">
+        <input class="checkbox checkbox-inline" checked="true" type="checkbox" onChange="setEdgesVisibility(this.checked)">Show Edges
+        <input class="checkbox checkbox-inline" checked="true" type="checkbox" onChange="setLinesVisibility(this.checked)">Show Lines
+        <input class="checkbox checkbox-inline" checked="true" type="checkbox"
+               onChange="setNameVisibility(this.checked)">Show Node Names
+    </div>
+    <br>
+    <div id="Infotext" class="row text-center">
+        <!-- asd -->
+    </div>
     <hr>
     <div class="row text-center">
-       <object id="ImageHolder" type="image/svg+xml" data="../VBB-Daten/BerlinStreetSVG.svg" width="1000" height="1000">
-		</object>
+        <iframe id="ImageHolder" width="1000" height="1000">
+
+        </iframe>
+        <!--
+        <object id="ImageHolder" type="image/svg+xml" width="1000"
+                height="1000">
+        </object>
+        -->
     </div>
 </div>
+<script src="./data/Stats.js"></script>
 <script>
-    function switchImage(caller) {
-        var buttons = ["VBB", "BerlinStreet", "BerlinFull", "Brandenburg", "Cottbus", "Frankfurt", "Potsdam", "SmallTest"];
-        for (var i = 0; i < buttons.length; i++)
-            document.getElementById(buttons[i]).setAttribute("class", "btn btn-lg btn-primary");
-        document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
-        var file = "../VBB-Daten/" + caller + "SVG.svg";
-        document.getElementById("ImageHolder").setAttribute("data", file);
-		document.getElementById("Infotext").innerHTML = document.getElementById(caller).getAttribute("title");
+    function getDescString(stat) {
+        return "Nodes: " + stat.Nodes + " | Edges: " + stat.Edges + " | Lines: " + stat.Lines;
     }
+    function onload() {
+        for (var i = 0; i < stats.length; i++) {
+            var node = document.createElement("button");
+            node.setAttribute("class", "btn btn-lg btn-primary")
+            node.setAttribute("id", stats[i].Name);
+            node.setAttribute("title", getDescString(stats[i]));
+            node.setAttribute("onClick", "switchImage(this.id)"); //Dirty, better use addeventlistener
+            //node.addEventListener("click", (evt)=> function(){switchImage(stats[i].Name);});
+            node.innerHTML = stats[i].Name;
+            document.getElementById("buttonrow").appendChild(node);
+        }
+        switchImage(stats[2].Name);
+    }
+    function setLinesVisibility(isvisible) {
+        showlines = isvisible;
+        applyVisibility();
+    }
+    function setLinesVisibility(isvisible) {
+        showedges = isvisible;
+        applyVisibility();
+    }
+    function setNameVisibility(isvisible) {
+        shownodenames = isvisible;
+        applyVisibility();
+    }
+    function applyVisibility() {
+        var svgdoc = document.getElementById("ImageHolder").contentDocument || document.getElementById("ImageHolder").contentWindow.document;
+        var textnodes = svgdoc.getElementsByTagName("text");
+        console.log("Preloop");
+        for (var i=0; i< textnodes.length; i++)
+            textnodes.item(i).setAttribute("visibility", shownodenames ? "visible" : "hidden");
+    }
+    function switchImage(caller) {
+        for (var i = 0; i < stats.length; i++)
+            document.getElementById(stats[i].Name).setAttribute("class", "btn btn-lg btn-primary");
+        document.getElementById(caller).setAttribute("class", "btn btn-lg btn-danger"); //Red button
+        var file = "./data/" + caller + "SVG.svg";
+        document.getElementById("ImageHolder").setAttribute("src", file);
+        //document.getElementById("ImageHolder").setAttribute("data", file);
+        document.getElementById("Infotext").innerHTML = document.getElementById(caller).getAttribute("title");
+        applyVisibility();
+    }
+    var showedges = true;
+    var showlines = true;
+    var shownodenames = true;
+    onload();
 </script>
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="js/jquery-1.11.3.min.js"></script>

@@ -1,5 +1,6 @@
 package Network;
 
+import Network.IO.SVGBuilder;
 import Network.LineMaking.NeighbourNode;
 import Network.LineMaking.UnitableLines;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
@@ -339,8 +340,8 @@ public class Graph {
 
     public void buildLines() {
         Random random = new Random(345345234L); //Arbitrary value
-        for (int i = 0; i < 4; i++) {
-            //while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
+        int pic = 0;
+        while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
             Collection<Node> singles = this.getNodes().stream()
                     .filter(x -> x.getLines().isEmpty())
                     .filter(x -> x.getNeighbours().stream()
@@ -369,40 +370,49 @@ public class Graph {
                                     .ifPresent(node -> line.addToPlace(node, x))
                     //TODO maybe find an adequate heuristic
             ));
-            Set<UnitableLines> unitable = new HashSet<>();
-            this.getNodes().forEach(node -> {
-                List<Line> endlines = node.getEndLines().stream()
-                        .sorted(Comparator.comparingInt(x -> x.getStops().size()))
-                        .collect(Collectors.toList());
-                if (endlines.size() >= 2)
-                    unitable.add(new UnitableLines(endlines.get(0), endlines.get(1),
-                            node));
-                else {
-                    List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
-                            .map(x -> new NeighbourNode(x, node))
-                            .filter(NeighbourNode::isValid)
-                            .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
-                            .collect(Collectors.toList());
-                    if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
-                        Line myline = endlines.get(0);
-                        Line otherline = neighbourswithends.get(0).getMinline();
-                        System.out.println(myline.getStops());
-                        System.out.println(otherline.getStops());
-                        System.out.println(node);
-                        otherline.addFitting(node);
-                        System.out.println(otherline.getStops());
-                        System.out.println(" ------------ ");
-                        UnitableLines ul = new UnitableLines(myline, otherline, node);
-                        if (!unitable.contains(ul))
-                            unitable.add(ul);
-                        else
-                            System.out.println("contained");
-                    } else if (neighbourswithends.size() >= 2) {
-                        //TODO
+            boolean keepmerging = true;
+            while (keepmerging) {
+                keepmerging = false;
+                loopcore:
+                {
+                    for (Node node : this.getNodes()) {
+                        List<Line> endlines = node.getEndLines().stream()
+                                .sorted(Comparator.comparingInt(x -> x.getStops().size()))
+                                .collect(Collectors.toList());
+                        if (endlines.size() >= 2) {
+                            endlines.get(0).absorbLine(endlines.get(1), node);
+                            this.lines.remove(endlines.get(1));
+                            keepmerging = true;
+                            break loopcore;
+                        } else {
+                            List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
+                                    .map(x -> new NeighbourNode(x, node))
+                                    .filter(NeighbourNode::isValid)
+                                    .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
+                                    .collect(Collectors.toList());
+                            if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
+                                Line myline = endlines.get(0);
+                                Line otherline = neighbourswithends.get(0).getMinline();
+                                otherline.addFitting(node);
+                                myline.absorbLine(otherline, node);
+                                this.lines.remove(otherline);
+                                keepmerging = true;
+                                break loopcore;
+                            } else if (neighbourswithends.size() >= 2) {
+                                Line line1 = neighbourswithends.get(0).getMinline();
+                                Line line2 = neighbourswithends.get(1).getMinline();
+                                line1.addFitting(node);
+                                line2.addFitting(node);
+                                line1.absorbLine(line2, node);
+                                this.lines.remove(line2);
+                                keepmerging = true;
+                                break loopcore;
+                            }
+                        }
                     }
                 }
-            });
-            unitable.forEach(x -> x.getA().absorbLine(x.getB(), x.getMergepoint()));
+                new SVGBuilder(this, "Test"+(pic++)).exportToSVG();
+            }
         }
     }
 }

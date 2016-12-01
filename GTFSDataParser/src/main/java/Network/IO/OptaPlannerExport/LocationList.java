@@ -2,7 +2,6 @@ package Network.IO.OptaPlannerExport;
 
 import Network.Graph;
 import Network.IO.CoordTransform;
-import Network.IO.GraphIO;
 import Network.Node;
 
 import javax.xml.bind.JAXBContext;
@@ -16,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,14 +26,20 @@ import java.util.stream.Collectors;
 public class LocationList {
     private List<Location> locations;
     private int globalid = 2;
+    private int locid = 0;
     private static Marshaller mar = null;
+
+    public LocationList(){
+        this.locations = new ArrayList<>();
+    }
 
     public LocationList(Graph graph){
         //TODO this is for airdistance, we need roaddistance
         CoordTransform transform = new CoordTransform(graph);
         this.locations = graph.getNodes().stream()
                 .map(Node::getPoint)
-                .map(Location::new)
+                .map(transform::transformPoint)
+                .map(x-> new Location(x, this.locid++))
                 .collect(Collectors.toList());
     }
 

@@ -55,8 +55,11 @@ public class Line {
     }
 
     public void addToEnd(Node node) {
-        if (this.stops.contains(node) || !this.getEnd().getNeighbours().contains(node))
+        if (this.stops.contains(node) || !this.getEnd().getNeighbours().contains(node)) {
+            System.err.println(node);
+            System.err.println(this.getStops());
             throw new IllegalArgumentException("Cannot add node to end");
+        }
         integrateIntoNode(node);
         this.stops.add(node);
     }
