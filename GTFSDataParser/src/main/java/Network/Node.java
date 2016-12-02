@@ -90,6 +90,10 @@ public class Node {
         return new Point2D.Double(this.lat, this.lon);
     }
 
+    public double getDistance(Node other){
+        return this.getPoint().distance(other.getPoint());
+    }
+
     public Set<Line> getLines() {
         return lines;
     }

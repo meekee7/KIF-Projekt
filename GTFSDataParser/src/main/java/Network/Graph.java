@@ -1,8 +1,7 @@
 package Network;
 
-import Network.IO.SVGBuilder;
+import Network.IO.Edge;
 import Network.LineMaking.NeighbourNode;
-import Network.LineMaking.UnitableLines;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
@@ -91,6 +90,36 @@ public class Graph {
             }
         }
         return checked;
+    }
+
+    private static Set<Line> collectLineComponent(Line start) {
+        Queue<Line> queue = new LinkedList<>();
+        Set<Line> checked = new HashSet<>();
+        queue.add(start);
+
+        while (!queue.isEmpty()) {
+            Line line = queue.remove();
+            if (!checked.contains(line)) {
+                line.getNeighbourLines().stream()
+                        .filter(x -> !checked.contains(x))
+                        .forEach(queue::add);
+                checked.add(line);
+            }
+        }
+        return checked;
+    }
+
+    public Collection<Set<Line>> getLineComponents() {
+        this.nodes.removeIf(x -> x.getNeighbours().isEmpty());
+        Set<Line> unconnected = new HashSet<>(this.lines);
+        LinkedList<Set<Line>> components = new LinkedList<>();
+
+        while (!unconnected.isEmpty()) {
+            Set<Line> component = collectLineComponent(unconnected.stream().findFirst().get());
+            unconnected.removeAll(component);
+            components.add(component);
+        }
+        return components;
     }
 
     public void removeDisconnected() {
@@ -217,6 +246,35 @@ public class Graph {
                 .forEach(this::mergeNodes);
     }
 
+    public List<Node> getShortestPathWeighted(Node start, Node end) {
+        Map<Node, Double> distance = new HashMap<>(this.nodes.size());
+        Map<Node, Node> prev = new HashMap<>(this.nodes.size());
+        this.nodes.forEach(x -> distance.put(x, Double.POSITIVE_INFINITY));
+        this.nodes.forEach(x -> prev.put(x, null));
+        distance.replace(start, 0.0);
+        PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingDouble(start::getDistance));
+        queue.addAll(this.nodes);
+        while (!queue.isEmpty()) queueloop:{
+            Node current = queue.poll();
+            current.getNeighbours().forEach(neighbour -> {
+                double dist = distance.get(current) + current.getDistance(neighbour);
+                if (dist < distance.get(neighbour)) {
+                    distance.put(neighbour, dist);
+                    prev.put(neighbour, current);
+                }
+            });
+            if (current == end)
+                break queueloop;
+        }
+
+        List<Node> path = new LinkedList<>();
+        Node node = end;
+        for (; prev.get(node) != null; node = prev.get(node))
+            path.add(0, node);
+        path.add(0, node);
+        return path;
+    }
+
     public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
         this.name = name;
 
@@ -340,6 +398,9 @@ public class Graph {
     }
 
     public void buildLines() {
+        this.lines.clear();
+        this.nodes.forEach(x -> x.getLines().clear());
+
         Random random = new Random(345345234L); //Arbitrary value
         int pic = 0;
         while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
@@ -432,5 +493,20 @@ public class Graph {
                         });
                     });
         }
+        Collection<Set<Line>> components = this.getLineComponents();
+        int iterations = 0;
+        while (components.size() != 1) {
+            Set<Line> minset = components.stream().min(Comparator.comparingInt(Set::size)).get();
+            Set<Line> maxset = components.stream().filter(x -> x != minset).max(Comparator.comparingInt(Set::size)).get();
+            Line minline = minset.stream().findFirst().get();
+            Line maxline = maxset.stream().findFirst().get();
+            Line newline = new Line(++this.lineidcounter, minline.getStart());
+            this.getShortestPathWeighted(minline.getStart(), maxline.getEnd()).stream()
+                    .skip(1) //Skip start
+                    .forEach(newline::addToEnd);
+            this.lines.add(newline);
+            iterations++;
+        }
+        System.err.println("ITERATIONS: " + iterations);
     }
 }

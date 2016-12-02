@@ -57,7 +57,11 @@
 <script src="./data/Stats.js"></script>
 <script>
     function getDescString(stat) {
-        return "Nodes: " + stat.Nodes + " | Edges: " + stat.Edges + " | Lines: " + stat.Lines;
+        var elems = [];
+        for (var elem in stat)
+            elems.push(elem + ": " + stat[elem]);
+        return elems.join(" | ");
+        //return "Nodes: " + stat.Nodes + " | Edges: " + stat.Edges + " | Lines: " + stat.Lines;
     }
     function onload() {
         for (var i = 0; i < stats.length; i++) {

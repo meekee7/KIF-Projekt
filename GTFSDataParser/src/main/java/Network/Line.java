@@ -38,6 +38,13 @@ public class Line {
         return result;
     }
 
+    public Set<Line> getNeighbourLines() {
+        Set<Line> result = new HashSet<>();
+        this.stops.forEach(x -> result.addAll(x.getLines()));
+        result.remove(this);
+        return result;
+    }
+
     public boolean canAdd(Node node) {
         return this.getStartAndEnd().stream().anyMatch(x -> x.getNeighbours().contains(node))
                 && !this.stops.contains(node);
@@ -123,13 +130,8 @@ public class Line {
         this.id = id;
     }
 
-
     public List<Node> getStops() {
         return stops;
-    }
-
-    public void setStops(List<Node> stops) {
-        this.stops = stops;
     }
 
     //@XmlElementWrapper(name = "stops")
@@ -147,6 +149,6 @@ public class Line {
      * @param nodemap A map from NodeIDs to actual nodes
      */
     public void postIOIntegration(Map<Integer, Node> nodemap) {
-        this.stops = this.stopIDs.stream().map(nodemap::get).collect(Collectors.toCollection(LinkedList::new));
+        this.stops = this.stopIDs.stream().map(nodemap::get).collect(Collectors.toCollection(ArrayList::new));
     }
 }

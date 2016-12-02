@@ -3,6 +3,7 @@ import Network.IO.GraphIO;
 import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
 import Network.IO.StatJSON;
+import Network.Node;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -97,11 +98,14 @@ public class Main {
         );
 */
 
-        Main.buildAllGraphs();
+        //Main.buildAllGraphs();
 
-/*
-        Graph graph = GraphIO.read("VBB-Daten/Potsdam.xml");
-        graph.buildLines();
+
+        Graph graph = GraphIO.read("VBB-Daten/BerlinStreet.xml");
+        Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
+        Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();
+        System.out.println(graph.getShortestPathWeighted(start,end).stream().map(Node::getName).collect(Collectors.toList()));
+/*        graph.buildLines();
         System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
         graph.getLines().forEach(x -> System.out.println(x.getStops()));
         new SVGBuilder(graph, "PotsdamWithLines").exportToSVG();
