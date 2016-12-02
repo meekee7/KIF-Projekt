@@ -252,10 +252,14 @@ public class Graph {
         this.nodes.forEach(x -> distance.put(x, Double.POSITIVE_INFINITY));
         this.nodes.forEach(x -> prev.put(x, null));
         distance.replace(start, 0.0);
-        PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingDouble(start::getDistance));
+        Set<Node> queue = new HashSet<>();
+        //PriorityQueue<Node> queue = new PriorityQueue<>(Comparator.comparingDouble(start::getDistance));
         queue.addAll(this.nodes);
         while (!queue.isEmpty()) queueloop:{
-            Node current = queue.poll();
+            Node current = queue.stream().min(Comparator.comparingDouble(distance::get)).get(); //queue.poll();
+            queue.remove(current);
+            if (current == end)
+                break queueloop;
             current.getNeighbours().forEach(neighbour -> {
                 double dist = distance.get(current) + current.getDistance(neighbour);
                 if (dist < distance.get(neighbour)) {
@@ -263,14 +267,14 @@ public class Graph {
                     prev.put(neighbour, current);
                 }
             });
-            if (current == end)
-                break queueloop;
         }
 
         List<Node> path = new LinkedList<>();
         Node node = end;
-        for (; prev.get(node) != null; node = prev.get(node))
-            path.add(0, node);
+        while (prev.get(node) != null){
+            node = prev.get(node);
+            path.add(0,node);
+        }
         path.add(0, node);
         return path;
     }
@@ -493,20 +497,15 @@ public class Graph {
                         });
                     });
         }
-        Collection<Set<Line>> components = this.getLineComponents();
-        int iterations = 0;
-        while (components.size() != 1) {
+        int prevlines = this.lines.size();
+        for (Collection<Set<Line>> components = this.getLineComponents(); components.size() != 1; components = this.getLineComponents()) {
             Set<Line> minset = components.stream().min(Comparator.comparingInt(Set::size)).get();
-            Set<Line> maxset = components.stream().filter(x -> x != minset).max(Comparator.comparingInt(Set::size)).get();
+            Set<Line> maxset = components.stream().filter(x -> x != minset).min(Comparator.comparingInt(Set::size)).get();
             Line minline = minset.stream().findFirst().get();
             Line maxline = maxset.stream().findFirst().get();
-            Line newline = new Line(++this.lineidcounter, minline.getStart());
-            this.getShortestPathWeighted(minline.getStart(), maxline.getEnd()).stream()
-                    .skip(1) //Skip start
-                    .forEach(newline::addToEnd);
-            this.lines.add(newline);
-            iterations++;
+            List<Node> path = this.getShortestPathWeighted(minline.getStart(), maxline.getEnd());
+            this.lines.add(new Line(++this.lineidcounter, path));
         }
-        System.err.println("ITERATIONS: " + iterations);
+        System.out.println("Component connecting added " + (this.lines.size() - prevlines) + " lines");
     }
 }

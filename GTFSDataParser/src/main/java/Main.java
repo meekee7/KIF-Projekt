@@ -12,6 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -21,6 +24,7 @@ import java.util.stream.Collectors;
  */
 public class Main {
     public static void buildAllGraphs() {
+        Instant start = Instant.now();
         GtfsReader reader = new GtfsReader();
         GtfsDaoImpl data = new GtfsDaoImpl();
         reader.setEntityStore(data);
@@ -64,6 +68,8 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Instant end = Instant.now();
+        System.out.println("PROCESSING TIME: " + Duration.between(start, end));
     }
 
     public static void main(String[] args) {
@@ -98,13 +104,14 @@ public class Main {
         );
 */
 
-        //Main.buildAllGraphs();
+        Main.buildAllGraphs();
 
-
+/*
         Graph graph = GraphIO.read("VBB-Daten/BerlinStreet.xml");
         Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
         Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();
         System.out.println(graph.getShortestPathWeighted(start,end).stream().map(Node::getName).collect(Collectors.toList()));
+*/
 /*        graph.buildLines();
         System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
         graph.getLines().forEach(x -> System.out.println(x.getStops()));

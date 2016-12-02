@@ -23,6 +23,12 @@ public class Line {
         this.stops.add(firststop);
     }
 
+    public Line(int id, List<Node> stops){
+        this.id = id;
+        this.stops = new ArrayList<>(stops);
+        this.stops.forEach(this::integrateIntoNode);
+    }
+
     public Node getStart() {
         return this.stops.get(0);
     }
