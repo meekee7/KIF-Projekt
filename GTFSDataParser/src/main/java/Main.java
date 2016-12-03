@@ -4,6 +4,7 @@ import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
 import Network.IO.StatJSON;
 import Network.Node;
+import javafx.scene.shape.Line;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -38,6 +39,7 @@ public class Main {
 
         Map<String, Predicate<Route>> cityfilters = new HashMap<>();
         //This could be done with reflection
+
         cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
@@ -59,6 +61,7 @@ public class Main {
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
             graphs.add(graph);
+            System.out.println("Switch route stats: " + graph.longestShortestSwitchRoute());
             System.out.println("-- END " + entry.getKey() + " --");
         });
         try {

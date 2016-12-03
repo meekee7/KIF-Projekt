@@ -16,10 +16,9 @@ public class StatJSON {
 
     public static String toJSONString(Graph graph) {
         IntSummaryStatistics edgestats = graph.getEdgeStats();
-        return String.format("{ \"Name\":\"%s\", \"Nodes\":%d, \"Edges\":%d, \"Lines\":%d, \"LineLength\":\"%s\", \"LineComps\":\"%s\"}",
+        return String.format("{ \"Name\":\"%s\", \"Nodes\":%d, \"Edges\":%d, \"Lines\":%d, \"LineLength\":\"%s\"}",
                 graph.getName(), edgestats.getCount(), edgestats.getSum() / 2, graph.getLines().size(),
-                graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics(),
-                graph.getLineComponents().stream().mapToInt(Set::size).summaryStatistics());
+                graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
     }
 
     public static String buildStatsJS(List<Graph> graphs) {

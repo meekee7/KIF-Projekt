@@ -13,6 +13,7 @@ public class Line {
     private int id;
     private List<Node> stops = new LinkedList<>();
     private List<Integer> stopIDs = new LinkedList<>();
+    private Set<Line> neighbourlines = null;
 
     public Line() {
     }
@@ -45,10 +46,16 @@ public class Line {
     }
 
     public Set<Line> getNeighbourLines() {
+        if (this.neighbourlines == null)
+            throw new IllegalStateException("Neighbour lines were not calculated yet");
+        return this.neighbourlines;
+    }
+
+    public void calcNeighbourLines(){
         Set<Line> result = new HashSet<>();
         this.stops.forEach(x -> result.addAll(x.getLines()));
         result.remove(this);
-        return result;
+        this.neighbourlines = result;
     }
 
     public boolean canAdd(Node node) {
@@ -103,6 +110,7 @@ public class Line {
         if (!this.canAbsorb(other, mergenode))
             throw new IllegalArgumentException("Cannot absorb other line");
         List<Node> othernodes = new LinkedList<>(other.getStops());
+        othernodes.remove(mergenode);
         if (this.getStart() == mergenode && other.getStart() == mergenode) {
             Collections.reverse(othernodes);
             othernodes.addAll(this.stops);
@@ -140,10 +148,11 @@ public class Line {
         return stops;
     }
 
-    //@XmlElementWrapper(name = "stops")
+    @XmlElementWrapper(name = "stops")
     @XmlElement(name = "s")
     public List<Integer> getStopIDs() {
-        return stopIDs;
+            this.stopIDs = this.stops.stream().map(Node::getId).collect(Collectors.toList());
+        return this.stopIDs;
     }
 
     /**
