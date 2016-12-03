@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
  */
 public class Line {
     private int id;
-    private List<Node> stops = new LinkedList<>();
+    protected List<Node> stops = new LinkedList<>();
     private List<Integer> stopIDs = new LinkedList<>();
-    private Set<Line> neighbourlines = null;
+    protected Set<Line> neighbourlines = null;
 
     public Line() {
     }

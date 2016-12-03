@@ -3,8 +3,7 @@ import Network.IO.GraphIO;
 import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
 import Network.IO.StatJSON;
-import Network.Node;
-import javafx.scene.shape.Line;
+import Network.MaxOrigRoute.OrigGraph;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -15,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -40,7 +38,7 @@ public class Main {
         Map<String, Predicate<Route>> cityfilters = new HashMap<>();
         //This could be done with reflection
 
-        cityfilters.put("VBB", CityFilter::VBB);
+//        cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
@@ -53,15 +51,21 @@ public class Main {
         cityfilters.entrySet().forEach(entry -> {
             System.out.println("-- START " + entry.getKey() + " --");
             String name = entry.getKey();
+            /*
             Graph graph = new Graph();
-            graph.parseGTFS(data, name, entry.getValue());
+            graph.parseGTFSRegular(data, name, entry.getValue());
             System.out.println("Edge stats " + graph.getEdgeStats());
             graph.buildLines();
             GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
             graphs.add(graph);
-            System.out.println("Switch route stats: " + graph.longestShortestSwitchRoute());
+            //System.out.println("Switch route stats: " + graph.longestShortestSwitchRoute());
+*/
+            Graph origlinegraph = new OrigGraph();
+            origlinegraph.parseGTFS(data, name, entry.getValue());
+            System.out.println("OrigLineGraph SwitchRouteStats: " + origlinegraph.getSwitchRouteStats());
+
             System.out.println("-- END " + entry.getKey() + " --");
         });
         try {
@@ -103,7 +107,7 @@ public class Main {
 
         List<String> testnames =Arrays.asList("U4", "U2");
         //System.out.println("Start " + entry.getKey());
-        Graph graph = Graph.parseGTFS(data, "GraphicsTest", x -> testnames.contains(x.getShortName())
+        Graph graph = Graph.parseGTFSRegular(data, "GraphicsTest", x -> testnames.contains(x.getShortName())
         );
 */
 

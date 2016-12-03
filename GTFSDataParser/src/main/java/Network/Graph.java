@@ -2,6 +2,7 @@ package Network;
 
 import Network.IO.Edge;
 import Network.LineMaking.NeighbourNode;
+import Network.MaxOrigRoute.OriginalLine;
 import Network.LineMaking.UnitableLines;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
@@ -11,7 +12,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
  */
 @XmlRootElement
 public class Graph {
-    private Collection<Node> nodes = new HashSet<>();
-    private Collection<String> routesIncluded = new ArrayList<>();
+    protected Collection<Node> nodes = new HashSet<>();
+    protected Collection<String> routesIncluded = new ArrayList<>();
     private Collection<Edge> edges = new HashSet<>();
     private Collection<Line> lines = new HashSet<>();
-    private String name;
+    protected String name;
 
     @XmlAttribute
     public String getName() {
@@ -36,8 +36,8 @@ public class Graph {
         this.name = name;
     }
 
-    private int nodeidcounter = 0;
-    private int lineidcounter = 0;
+    //private int nodeidcounter = 0;
+    //private int lineidcounter = 0;
 
     public Graph() {
     }
@@ -274,12 +274,10 @@ public class Graph {
             path.add(0, node);
         if (path.get(0) != start)
             path.add(0, start);
-        else
-            System.err.println("START WAS START");
         return path;
     }
 
-    public List<Line> switchRoute(Line start, Line end) {
+    public List<Line> getSwitchRoute(Line start, Line end) {
         Map<Line, Line> prev = new HashMap<>();
         Queue<Line> queue = new LinkedList<>();
         queue.add(start);
@@ -294,87 +292,17 @@ public class Graph {
                     .forEach(queue::add);
         }
         if (!prev.containsKey(end))
-            throw new IllegalStateException("Could not find route");
+            return null;
+        //throw new IllegalStateException("Could not find route");
 
         List<Line> path = new LinkedList<>();
         for (Line node = end; prev.get(node) != null; node = prev.get(node))
             path.add(0, node);
-        if (path.get(0) != start)
-            path.add(0, start);
-        else
-            System.err.println("START WAS START");
+        path.add(0, start);
         return path;
-
-
-
-        /*
-        Queue<List<Line>> queue = new LinkedList<>();
-        queue.add(Arrays.asList(start));
-        Set<Line> checked = new HashSet<>();
-        while (!queue.isEmpty()) {
-            List<Line> current = queue.poll();
-            Line last = current.get(current.size() - 1);
-            if (last == end)
-                return current;
-            checked.add(last);
-            last.getNeighbourLines().stream().filter(x -> !checked.contains(x))
-                    .map(x -> {
-                        List<Line> newpath = new LinkedList<>(current);
-                        newpath.add(x);
-                        return newpath;
-                    })
-                    .forEach(queue::add);
-        }
-        throw new IllegalStateException("Could not find route");
-*/
-
-        /*
-        Map<Line, Integer> distance = new ConcurrentHashMap<>(this.lines.size());
-        Map<Line, Line> prev = new ConcurrentHashMap<>(this.lines.size());
-        Map<Line, Integer> hits = new HashMap<>(this.lines.size());
-        this.lines.forEach(x -> distance.put(x, Integer.MAX_VALUE));
-        this.lines.forEach(x -> hits.put(x, 0));
-        this.lines.forEach(x -> prev.put(x, null));
-        distance.replace(start, 0);
-        Set<Line> queue = new HashSet<>(this.lines);
-
-        while (!queue.isEmpty()) switchqueueloop:{
-            Line current = queue.stream()
-                    .filter(x -> distance.get(x) != Integer.MAX_VALUE)
-                    .min(Comparator.comparingInt(distance::get)).get();
-            queue.remove(current);
-            if (current == end)
-                break switchqueueloop;
-            current.getNeighbourLines().stream()
-                    .filter(x -> distance.get(current) + 1 < distance.get(x))
-                    .forEach(x -> {
-                        hits.replace(x, hits.get(x) + 1);
-                        System.out.println("WAS " + distance.get(x));
-                        distance.put(x, distance.get(current) + 1);
-                        System.out.println("IS " + distance.get(x));
-                        prev.put(x, current);
-                        if (prev.get(current) == x && prev.get(x) == current)
-                            System.out.println("GOTCHA");
-                    });
-
-        }
-        List<Line> path = new LinkedList<>();
-        for (Line line = end; prev.get(line) != null; line = prev.get(line)) {
-            if (path.contains(line)) {
-                System.out.println("LOOPED");
-                System.exit(1);
-            }
-            path.add(0, line);
-        }
-        if (path.get(0) != start)
-            path.add(0, start);
-        else
-            System.err.println("START WAS START");
-        return path;
-        */
     }
 
-    public IntSummaryStatistics longestShortestSwitchRoute() {
+    public IntSummaryStatistics getSwitchRouteStats() {
         this.calcNeighbourLines();
         Set<UnitableLines> pairs = new HashSet<>(this.lines.size() * this.lines.size() / 2);
         this.lines.forEach(x -> this.lines.forEach(y -> pairs.add(new UnitableLines(x, y, null))));
@@ -384,12 +312,12 @@ public class Graph {
                 .map(x -> {
                     if (counter.incrementAndGet() % 100000 == 0)
                         System.out.println(counter.intValue() + " out of " + (pairs.size() - this.lines.size()));
-                    return this.switchRoute(x.getA(), x.getB());
+                    return this.getSwitchRoute(x.getA(), x.getB());
                 })
                 .mapToInt(List::size)
                 .summaryStatistics();
-                //.max(Comparator.comparingInt(List::size))
-                //.get();
+        //.max(Comparator.comparingInt(List::size))
+        //.get();
     }
 
     public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
@@ -412,6 +340,7 @@ public class Graph {
 
         System.out.println("Trips collected: " + trips.size());
 
+
         Collection<StopTime> stoptimes = data.getAllStopTimes().stream()
                 .filter(x -> trips.contains(x.getTrip()))
                 .collect(Collectors.toList());
@@ -424,8 +353,9 @@ public class Graph {
         System.out.println("Stops collected: " + stops.size());
 
         Map<Stop, Node> stopmap = new HashMap<>(stops.size());
+        IDFactory nodeIDs = new IDFactory();
         stops.forEach(x -> stopmap.put(x,
-                new Node(++this.nodeidcounter, x.getName(), x.getLat(), x.getLon())));
+                new Node(nodeIDs.createID(), x.getName(), x.getLat(), x.getLon())));
 
         System.out.println("Stopmap built");
 
@@ -520,6 +450,7 @@ public class Graph {
         System.out.println("Line building start");
 
         Random random = new Random(345345234L); //Arbitrary value
+        IDFactory lineIDs = new IDFactory();
         int pic = 0;
         while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
             Collection<Node> singles = this.getNodes().stream()
@@ -529,7 +460,7 @@ public class Graph {
                             .count() <= 1
                     ).collect(Collectors.toList());
             if (!singles.isEmpty())
-                singles.forEach(x -> this.lines.add(new Line(++this.lineidcounter, x)));
+                singles.forEach(x -> this.lines.add(new Line(lineIDs.createID(), x)));
             else {
                 List<Node> nearline = this.getNodes().stream().filter(x -> x.getLines().isEmpty())
                         .filter(x -> x.getNeighbours().stream()
@@ -537,7 +468,7 @@ public class Graph {
                 java.util.Collections.shuffle(nearline, random);
                 nearline = nearline.subList(0, Math.min(nearline.size(), 5));
                 nearline.forEach(x -> {
-                    Line line = new Line(++this.lineidcounter, x.getNeighbours().stream()
+                    Line line = new Line(lineIDs.createID(), x.getNeighbours().stream()
                             .filter(y -> !y.getLines().isEmpty())
                             .findFirst().get());
                     this.lines.add(line);
@@ -623,7 +554,7 @@ public class Graph {
             Line minline = minset.stream().findFirst().get();
             Line maxline = maxset.stream().findFirst().get();
             List<Node> path = this.getShortestPathWeighted(minline.getStart(), maxline.getEnd());
-            Line newline = new Line(++this.lineidcounter, path);
+            Line newline = new Line(lineIDs.createID(), path);
             this.lines.add(newline);
             this.calcNeighbourLines();
         }
