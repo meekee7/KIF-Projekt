@@ -41,6 +41,7 @@ public class Main {
 //        cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
+        cityfilters.put("BerlinNoFerry", CityFilter::BerlinNoFerry);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
@@ -48,7 +49,7 @@ public class Main {
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
         List<Graph> graphs = new ArrayList<>(cityfilters.size());
-        cityfilters.entrySet().forEach(entry -> {
+        cityfilters.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(entry -> {
             System.out.println("-- START " + entry.getKey() + " --");
             String name = entry.getKey();
             /*
@@ -66,7 +67,7 @@ public class Main {
             origlinegraph.parseGTFS(data, name, entry.getValue());
             System.out.println("OrigLineGraph SwitchRouteStats: " + origlinegraph.getSwitchRouteStats());
 
-            System.out.println("-- END " + entry.getKey() + " --");
+            System.out.println("-- END " + name + " --");
         });
         try {
             Files.write(Paths.get("GraphViewer/data/Stats.js"), StatJSON.buildStatsJS(graphs.stream()

@@ -20,6 +20,11 @@ public class OrigGraph extends Graph {
     private Collection<OriginalLine> originallines = new HashSet<>();
 
     @Override
+    public IntSummaryStatistics getLineStats() {
+        return this.originallines.stream().mapToInt(x -> x.getStops().size()).summaryStatistics();
+    }
+
+    @Override
     public IntSummaryStatistics getSwitchRouteStats() {
         Set<UnitableLines> pairs = new HashSet<>(this.originallines.size() * this.originallines.size() / 2);
         this.originallines.forEach(x -> this.originallines.forEach(y -> pairs.add(new UnitableLines(x, y, null))));
@@ -37,7 +42,7 @@ public class OrigGraph extends Graph {
         System.out.println("MAX ROUTE: ");
         List<Line> maxroute = routes.parallelStream().max(Comparator.comparingInt(List::size)).get();
         System.out.println(maxroute.stream().map(x -> (OriginalLine) x)
-                .map(x -> x.getName() + " | " + x.getAgency())
+                .map(x -> x.getName() + "|" + x.getAgency())
                 .collect(Collectors.toList()));
 
         return routes.parallelStream()

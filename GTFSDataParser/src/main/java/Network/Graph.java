@@ -151,6 +151,10 @@ public class Graph {
         return this.nodes.stream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
     }
 
+    public IntSummaryStatistics getLineStats(){
+        return this.lines.stream().mapToInt(x->x.getStops().size()).summaryStatistics();
+    }
+
     @XmlElementWrapper(name = "nodes")
     @XmlElement(name = "n")
     public Collection<Node> getNodes() {

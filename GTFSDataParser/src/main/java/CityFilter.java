@@ -14,7 +14,7 @@ public class CityFilter {
     }
 
     private static String getID(Route route) {
-        return route.getAgency().getId().replaceAll("-", ""); //The GTFS lib puts dashes in the ID
+        return route.getAgency().getId().replaceAll("-|_", "");
     }
 
     public static boolean BerlinStreet(Route route) {
@@ -22,8 +22,12 @@ public class CityFilter {
     }
 
     public static boolean BerlinFull(Route route) {
+        return BerlinNoFerry(route) || getID(route).equals("BVF");
+    }
+
+    public static boolean BerlinNoFerry(Route route) {
         return getID(route).equals("BVB") || getID(route).equals("BVT") ||
-                getID(route).equals("BVU") || getID(route).equals("SEV");
+                getID(route).equals("BVU") || getID(route).equals("SEV") || getID(route).equals("DBS");
     }
 
     public static boolean Potsdam(Route route) {

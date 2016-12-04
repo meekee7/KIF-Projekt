@@ -16,7 +16,7 @@ public class OriginalLine extends Line {
     public OriginalLine(int id, String name, String agency) {
         super(id, new LinkedList<>());
         this.name = name;
-        this.agency = agency.replace("-","");
+        this.agency = agency.replaceAll("-|_","");
     }
 
     public void addStop(Node stop){
