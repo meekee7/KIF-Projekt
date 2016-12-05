@@ -5,6 +5,7 @@ import Network.Node;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -13,13 +14,14 @@ import java.util.stream.Collectors;
 public class OriginalLine extends Line {
     private String name;
     private String agency;
+
     public OriginalLine(int id, String name, String agency) {
-        super(id, new LinkedList<>());
+        super(id, new Random(), new LinkedList<>());
         this.name = name;
-        this.agency = agency.replaceAll("-|_","");
+        this.agency = agency.replaceAll("-|_", "");
     }
 
-    public void addStop(Node stop){
+    public void addStop(Node stop) {
         this.stops.add(stop);
     }
 

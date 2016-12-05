@@ -1,6 +1,8 @@
 import org.onebusaway.gtfs.model.Route;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by micha on 20.11.2016.
@@ -22,10 +24,6 @@ public class CityFilter {
     }
 
     public static boolean BerlinFull(Route route) {
-        return BerlinNoFerry(route) || getID(route).equals("BVF");
-    }
-
-    public static boolean BerlinNoFerry(Route route) {
         return getID(route).equals("BVB") || getID(route).equals("BVT") ||
                 getID(route).equals("BVU") || getID(route).equals("SEV") || getID(route).equals("DBS");
     }

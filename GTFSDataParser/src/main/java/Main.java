@@ -4,6 +4,7 @@ import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
 import Network.IO.StatJSON;
 import Network.MaxOrigRoute.OrigGraph;
+import Network.MaxOrigRoute.OriginalLine;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.serialization.GtfsReader;
@@ -35,43 +36,60 @@ public class Main {
             MyLogger.l.error(e.toString());
         }
 
-        Map<String, Predicate<Route>> cityfilters = new HashMap<>();
+        Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
-//        cityfilters.put("VBB", CityFilter::VBB);
+        cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
-        cityfilters.put("BerlinNoFerry", CityFilter::BerlinNoFerry);
+        //cityfilters.put("BerlinNoFerry", CityFilter::BerlinNoFerry);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
-        List<Graph> graphs = new ArrayList<>(cityfilters.size());
-        cityfilters.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(entry -> {
-            System.out.println("-- START " + entry.getKey() + " --");
-            String name = entry.getKey();
-            /*
+        List<StatJSON> statJSONs = new ArrayList<>(cityfilters.size());
+        cityfilters.forEach((name, predicate) -> {
+            System.out.println("-- START " + name + " --");
+
             Graph graph = new Graph();
-            graph.parseGTFSRegular(data, name, entry.getValue());
+            graph.parseGTFS(data, name, predicate);
             System.out.println("Edge stats " + graph.getEdgeStats());
             graph.buildLines();
             GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
-            graphs.add(graph);
-            //System.out.println("Switch route stats: " + graph.longestShortestSwitchRoute());
-*/
+            //graphs.add(graph);
+            //IntSummaryStatistics switchroutestats = graph.getSwitchRouteStats();
+            //System.out.println("Switch route stats: " + switchroutestats);
+
+            StatJSON stats = new StatJSON();
+            stats.add(graph);
+            //stats.add("SwitchRouteStats", switchroutestats);
+            statJSONs.add(stats);
             Graph origlinegraph = new OrigGraph();
-            origlinegraph.parseGTFS(data, name, entry.getValue());
-            System.out.println("OrigLineGraph SwitchRouteStats: " + origlinegraph.getSwitchRouteStats());
+            origlinegraph.parseGTFS(data, name, predicate);
+           // IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
+            stats.add("OrigLines", origlinegraph.getLineStats());
+            //stats.add("OrigSwitchRouteStats", origswitchroutestats);
+            //System.out.println("OrigLineGraph SwitchRouteStats: " + origswitchroutestats);
+            origlinegraph.getNodes().stream()
+                    .filter(x -> x.getName().equals("S Hegermühle")).findFirst().ifPresent(y ->
+                    System.err.println(name +  " Hegermühle: " +
+                            y.getLines().stream().map(x -> (OriginalLine) x)
+                                    .map(x -> x.getName() + "-" + x.getAgency()).collect(Collectors.toList())));
+
+            origlinegraph.getNodes().stream()
+                    .filter(x -> x.getName().equals("S Strausberg Bhf")).findFirst().ifPresent(y ->
+                    System.err.println(name +  " Strausberg: " +
+                            y.getLines().stream().map(x -> (OriginalLine) x)
+                                    .map(x -> x.getName() + "-" + x.getAgency()).collect(Collectors.toList())));
 
             System.out.println("-- END " + name + " --");
         });
         try {
-            Files.write(Paths.get("GraphViewer/data/Stats.js"), StatJSON.buildStatsJS(graphs.stream()
-                    .sorted((x, y) -> y.getNodes().size() - x.getNodes().size()).collect(Collectors.toList())).getBytes());
+            Files.write(Paths.get("GraphViewer/data/Stats.js"), StatJSON.buildStatsJS(statJSONs).getBytes());
             System.out.println("Wrote file GraphViewer/data/Stats.js");
         } catch (IOException e) {
             e.printStackTrace();

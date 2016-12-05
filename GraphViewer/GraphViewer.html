@@ -47,9 +47,7 @@
 
         </iframe>
         -->
-
-        <object id="ImageHolder" type="image/svg+xml" width="1000"
-                height="1000">
+        <object id="ImageHolder" type="image/svg+xml" width="1000px" height="1000px">
         </object>
 
     </div>
@@ -60,7 +58,7 @@
         var elems = [];
         for (var elem in stat)
             elems.push(elem + ": " + stat[elem]);
-        return elems.join(" | ");
+        return elems.join(" <br> ");
         //return "Nodes: " + stat.Nodes + " | Edges: " + stat.Edges + " | Lines: " + stat.Lines;
     }
     function onload() {
@@ -80,7 +78,7 @@
         showlines = isvisible;
         applyVisibility();
     }
-    function setLinesVisibility(isvisible) {
+    function setEdgesVisibility(isvisible) {
         showedges = isvisible;
         applyVisibility();
     }
@@ -94,6 +92,20 @@
         console.log("Preloop");
         for (var i = 0; i < textnodes.length; i++)
             textnodes.item(i).setAttribute("visibility", shownodenames ? "visible" : "hidden");
+        var edgenodes = svgdoc.getElementsByTagName("line");
+        for (var i=0; i < edgenodes.length; i++){
+            var node = edgenodes.item(i);
+            if (node.getAttribute("style") == "fill:none;")
+                node.setAttribute("visibility", showedges ? "visible" : "hidden");
+            else
+                node.setAttribute("visibility", showlines ? "visible" : "hidden");
+        }
+        var circlenodes = svgdoc.getElementsByTagName("circle");
+        for (var i=0; i< circlenodes.length; i++){
+            var node = circlenodes.item(i);
+            if (node.getAttribute("r")=="6")
+                node.setAttribute("visibility", showlines ? "visible" : "hidden");
+        }
     }
     function switchImage(caller) {
         for (var i = 0; i < stats.length; i++)

@@ -3,7 +3,9 @@ package Network;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -14,20 +16,27 @@ public class Line {
     protected List<Node> stops = new LinkedList<>();
     private List<Integer> stopIDs = new LinkedList<>();
     protected Set<Line> neighbourlines = null;
+    private int colour;
+
+    private static int createColour(Random random) {
+        return new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)).getRGB();
+    }
 
     public Line() {
     }
 
-    public Line(int id, Node firststop) {
+    public Line(int id, Random colourrand, Node firststop) {
         this.id = id;
         this.integrateIntoNode(firststop);
         this.stops.add(firststop);
+        this.colour = createColour(colourrand);
     }
 
-    public Line(int id, List<Node> stops){
+    public Line(int id, Random colourrand, List<Node> stops) {
         this.id = id;
         this.stops = new ArrayList<>(stops);
         this.stops.forEach(this::integrateIntoNode);
+        this.colour = createColour(colourrand);
     }
 
     public Node getStart() {
@@ -51,7 +60,7 @@ public class Line {
         return this.neighbourlines;
     }
 
-    public void calcNeighbourLines(){
+    public void calcNeighbourLines() {
         Set<Line> result = new HashSet<>();
         this.stops.forEach(x -> result.addAll(x.getLines()));
         result.remove(this);
@@ -144,6 +153,23 @@ public class Line {
         this.id = id;
     }
 
+    public Color getColourAWT() {
+        return new Color(this.colour);
+    }
+
+    @XmlAttribute(name = "colour")
+    public int getColour() {
+        return this.colour;
+    }
+
+    public void setColour(int colour) {
+        this.colour = colour;
+    }
+
+    public void setColour(Color colour){
+        this.colour = colour.getRGB();
+    }
+
     public List<Node> getStops() {
         return stops;
     }
@@ -151,7 +177,7 @@ public class Line {
     @XmlElementWrapper(name = "stops")
     @XmlElement(name = "s")
     public List<Integer> getStopIDs() {
-            this.stopIDs = this.stops.stream().map(Node::getId).collect(Collectors.toList());
+        this.stopIDs = this.stops.stream().map(Node::getId).collect(Collectors.toList());
         return this.stopIDs;
     }
 

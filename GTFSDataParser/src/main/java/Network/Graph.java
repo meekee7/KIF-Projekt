@@ -151,8 +151,8 @@ public class Graph {
         return this.nodes.stream().mapToInt(x -> x.getNeighbours().size()).summaryStatistics();
     }
 
-    public IntSummaryStatistics getLineStats(){
-        return this.lines.stream().mapToInt(x->x.getStops().size()).summaryStatistics();
+    public IntSummaryStatistics getLineStats() {
+        return this.lines.stream().mapToInt(x -> x.getStops().size()).summaryStatistics();
     }
 
     @XmlElementWrapper(name = "nodes")
@@ -252,6 +252,15 @@ public class Graph {
                 .forEach(this::mergeNodes);
     }
 
+    /**
+     * This method uses the Dijkstra algorithm to calculate a path
+     * with minimum length between two nodes.
+     * The edges are weighted with the air distance.
+     *
+     * @param start The start node
+     * @param end   The end node
+     * @return A path between start and end with minimum length
+     */
     public List<Node> getShortestPathWeighted(Node start, Node end) {
         Map<Node, Double> distance = new HashMap<>(this.nodes.size());
         Map<Node, Node> prev = new HashMap<>(this.nodes.size());
@@ -281,6 +290,14 @@ public class Graph {
         return path;
     }
 
+    /**
+     * This method uses a simplified variant to find a route between two lines
+     * with minimum line switches.
+     *
+     * @param start The start line
+     * @param end   The end line
+     * @return A route between start and end with minimum line switches, null if there is no route
+     */
     public List<Line> getSwitchRoute(Line start, Line end) {
         Map<Line, Line> prev = new HashMap<>();
         Queue<Line> queue = new LinkedList<>();
@@ -314,7 +331,7 @@ public class Graph {
         return pairs.parallelStream()
                 .filter(x -> x.getA() != x.getB())
                 .map(x -> {
-                    if (counter.incrementAndGet() % 100000 == 0)
+                    if (counter.incrementAndGet() % 100_000 == 0)
                         System.out.println(counter.intValue() + " out of " + (pairs.size() - this.lines.size()));
                     return this.getSwitchRoute(x.getA(), x.getB());
                 })
@@ -322,6 +339,10 @@ public class Graph {
                 .summaryStatistics();
         //.max(Comparator.comparingInt(List::size))
         //.get();
+    }
+
+    private void calcNeighbourLines() {
+        this.lines.forEach(Line::calcNeighbourLines);
     }
 
     public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
@@ -464,7 +485,7 @@ public class Graph {
                             .count() <= 1
                     ).collect(Collectors.toList());
             if (!singles.isEmpty())
-                singles.forEach(x -> this.lines.add(new Line(lineIDs.createID(), x)));
+                singles.forEach(x -> this.lines.add(new Line(lineIDs.createID(), random, x)));
             else {
                 List<Node> nearline = this.getNodes().stream().filter(x -> x.getLines().isEmpty())
                         .filter(x -> x.getNeighbours().stream()
@@ -472,7 +493,7 @@ public class Graph {
                 java.util.Collections.shuffle(nearline, random);
                 nearline = nearline.subList(0, Math.min(nearline.size(), 5));
                 nearline.forEach(x -> {
-                    Line line = new Line(lineIDs.createID(), x.getNeighbours().stream()
+                    Line line = new Line(lineIDs.createID(), random, x.getNeighbours().stream()
                             .filter(y -> !y.getLines().isEmpty())
                             .findFirst().get());
                     this.lines.add(line);
@@ -558,7 +579,7 @@ public class Graph {
             Line minline = minset.stream().findFirst().get();
             Line maxline = maxset.stream().findFirst().get();
             List<Node> path = this.getShortestPathWeighted(minline.getStart(), maxline.getEnd());
-            Line newline = new Line(lineIDs.createID(), path);
+            Line newline = new Line(lineIDs.createID(), random, path);
             this.lines.add(newline);
             this.calcNeighbourLines();
         }
@@ -566,9 +587,5 @@ public class Graph {
         System.out.println("Built lines stats: " + this.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
 
         System.out.println("Neighbour lines calculated");
-    }
-
-    private void calcNeighbourLines() {
-        this.lines.forEach(Line::calcNeighbourLines);
     }
 }
