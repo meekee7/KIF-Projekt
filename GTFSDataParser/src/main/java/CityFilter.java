@@ -20,6 +20,32 @@ public class CityFilter {
     }
 
     public static boolean BerlinStreet(Route route) {
+        return getID(route).equals("796") && (route.getType() == 700 || route.getType() == 900 || route.getType() == 3); //BVG, Bus & Tram
+    }
+
+    public static boolean BerlinFull(Route route) {
+        return getID(route).equals("796") || getID(route).equals("1"); //BVG || S-Bahn Berlin
+    }
+
+    public static boolean Potsdam(Route route) {
+        return getID(route).equals("150");
+    }
+
+    public static boolean Cottbus(Route route) {
+        return getID(route).equals("516");
+    }
+
+    public static boolean Brandenburg(Route route) {
+        return getID(route).equals("47");
+    }
+
+    public static boolean Frankfurt(Route route) {
+        return getID(route).equals("84");
+    }
+
+    /*
+
+    public static boolean BerlinStreet(Route route) {
         return getID(route).equals("BVB") || getID(route).equals("BVT");
     }
 
@@ -43,4 +69,5 @@ public class CityFilter {
     public static boolean Frankfurt(Route route) {
         return getID(route).equals("FFB") || getID(route).equals("FFT");
     }
+    */
 }

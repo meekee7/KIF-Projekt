@@ -115,6 +115,16 @@ public class Line {
         return this.getStops().stream().allMatch(x -> mergenode == x || !other.getStops().contains(x));
     }
 
+    public void verify() {
+        if (new HashSet<>(this.stops).size() != this.stops.size())
+            throw new IllegalStateException("Duplicate stops");
+        this.stops.stream().reduce(null, (x, y) -> {
+            if (x != null && !y.getNeighbours().contains(x))
+                throw new IllegalStateException("Previous stop not neighbour");
+            return y;
+        });
+    }
+
     public void absorbLine(Line other, Node mergenode) {
         if (!this.canAbsorb(other, mergenode))
             throw new IllegalArgumentException("Cannot absorb other line");
@@ -166,7 +176,7 @@ public class Line {
         this.colour = colour;
     }
 
-    public void setColour(Color colour){
+    public void setColour(Color colour) {
         this.colour = colour.getRGB();
     }
 

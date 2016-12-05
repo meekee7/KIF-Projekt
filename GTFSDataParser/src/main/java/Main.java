@@ -1,4 +1,5 @@
 import Network.Graph;
+import Network.IDFactory;
 import Network.IO.GraphIO;
 import Network.IO.OptaPlannerExport.LocationList;
 import Network.IO.SVGBuilder;
@@ -30,16 +31,19 @@ public class Main {
         reader.setEntityStore(data);
 
         try {
-            reader.setInputLocation(new File("./VBB-Daten/630229.zip"));
+            reader.setInputLocation(new File("./VBB-Daten/GTFS_VBB_Dez2016_Aug2017_mit_shapes-files.zip"));
+            //reader.setInputLocation(new File("./VBB-Daten/630229.zip"));
             reader.run();
         } catch (IOException e) {
             MyLogger.l.error(e.toString());
         }
 
+        //System.out.println(data.getAllRoutes().stream().map(Route::getType).distinct().sorted().collect(Collectors.toList()));
+
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
-        //cityfilters.put("VBB", CityFilter::VBB);
+        cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
@@ -48,6 +52,9 @@ public class Main {
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
+        boolean longestshortestpath = true;
+
+        IDFactory ids = new IDFactory();
         List<StatJSON> statJSONs = new ArrayList<>(cityfilters.size());
         cityfilters.forEach((name, predicate) -> {
             System.out.println("-- START " + name + " --");
@@ -59,20 +66,27 @@ public class Main {
             GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
-            IntSummaryStatistics switchroutestats = graph.getSwitchRouteStats();
-            System.out.println("Switch route stats: " + switchroutestats);
+
 
             StatJSON stats = new StatJSON();
             stats.add(graph);
-            stats.add("SwitchRouteStats", switchroutestats);
-            statJSONs.add(stats);
-            Graph origlinegraph = new OrigGraph();
-            origlinegraph.parseGTFS(data, name, predicate);
-            IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
-            stats.add("OrigLines", origlinegraph.getLineStats());
-            stats.add("OrigSwitchRouteStats", origswitchroutestats);
-            System.out.println("OrigLineGraph SwitchRouteStats: " + origswitchroutestats);
 
+            stats.add("link", "GraphViewer/data/" + name + "SVG.svg");
+            stats.add("frame", ids.createID());
+            if (longestshortestpath) {
+                IntSummaryStatistics switchroutestats = graph.getSwitchRouteStats();
+                System.out.println("Switch route stats: " + switchroutestats);
+                stats.add("SwitchRouteStats", switchroutestats);
+
+                Graph origlinegraph = new OrigGraph();
+                origlinegraph.parseGTFS(data, name, predicate);
+                IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
+                stats.add("OrigLines", origlinegraph.getLineStats());
+                stats.add("OrigSwitchRouteStats", origswitchroutestats);
+                System.out.println("OrigLineGraph SwitchRouteStats: " + origswitchroutestats);
+            }
+
+            statJSONs.add(stats);
             System.out.println("-- END " + name + " --");
         });
         try {

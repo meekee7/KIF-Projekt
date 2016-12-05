@@ -30,8 +30,8 @@
     <br>
     <div class="row text-center">
         <span style="color: red; ">
-            Wegen XSS-Problemen funktionieren Teile des Scripts nicht in Chromium/Blink-basierten Browsern.
-        Edge oder Firefox verwenden!</span>
+            Wegen XSS-Problemen funktionieren Teile des Scripts nicht in Chromium-basierten Browsern.
+        Edge/Safari/Firefox verwenden!</span>
     </div>
     <br>
     <div id="Infotext" class="row text-center">
@@ -70,7 +70,7 @@
     function onload() {
         for (var i = 0; i < stats.length; i++) {
             var node = document.createElement("button");
-            node.setAttribute("class", "btn btn-lg btn-primary")
+            node.setAttribute("class", "btn btn-lg btn-primary");
             node.setAttribute("id", stats[i].Name);
             node.setAttribute("title", getDescString(stats[i]));
             node.setAttribute("onClick", "switchImage(this.id)"); //Dirty, better use addeventlistener

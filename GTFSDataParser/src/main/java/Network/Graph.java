@@ -539,16 +539,18 @@ public class Graph {
                                     keepmerging = true;
                                     break loopcore;
                                 }
-                            } /*else if (neighbourswithends.size() >= 2 && false) {
+                            } else if (neighbourswithends.size() >= 2) {
                                 Line line1 = neighbourswithends.get(0).getMinline();
                                 Line line2 = neighbourswithends.get(1).getMinline();
-                                line1.addFitting(node);
-                                line2.addFitting(node);
-                                line1.absorbLine(line2, node);
-                                this.lines.remove(line2);
-                                keepmerging = true;
-                                break loopcore;
-                            }*/
+                                if (line1.canAbsorb(line2, node)) {
+                                    line1.addFitting(node);
+                                    line2.addFitting(node);
+                                    line1.absorbLine(line2, node);
+                                    this.lines.remove(line2);
+                                    keepmerging = true;
+                                    break loopcore;
+                                }
+                            }
                         }
                     }
                 }
@@ -569,7 +571,62 @@ public class Graph {
                         });
                     });
         }
+
         int prevlines = this.lines.size();
+
+        boolean keepmerging = true;
+        while (keepmerging) {
+            keepmerging = false;
+            loopcore:
+            {
+                for (Node node : this.getNodes()) {
+                    List<Line> endlines = node.getEndLines().stream()
+                            .sorted(Comparator.comparingInt(x -> x.getStops().size()))
+                            .collect(Collectors.toList());
+                    if (endlines.size() >= 2) {
+                        if (endlines.get(0).canAbsorb(endlines.get(1), node)) {
+                            endlines.get(0).absorbLine(endlines.get(1), node);
+                            this.lines.remove(endlines.get(1));
+                            keepmerging = true;
+                            break loopcore;
+                        }
+                    } else {
+                        List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
+                                .map(x -> new NeighbourNode(x, node))
+                                .filter(NeighbourNode::isValid)
+                                .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
+                                .collect(Collectors.toList());
+                        if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
+                            Line myline = endlines.get(0);
+                            Line otherline = neighbourswithends.get(0).getMinline();
+                            otherline.addFitting(node);
+                            if (myline.canAbsorb(otherline, node)) {
+                                myline.absorbLine(otherline, node);
+                                this.lines.remove(otherline);
+                                keepmerging = true;
+                                break loopcore;
+                            }
+                        } else if (neighbourswithends.size() >= 2) {
+                            Line line1 = neighbourswithends.get(0).getMinline();
+                            Line line2 = neighbourswithends.get(1).getMinline();
+                            if (line1.canAbsorb(line2, node)) {
+                                line1.addFitting(node);
+                                line2.addFitting(node);
+                                line1.absorbLine(line2, node);
+                                this.lines.remove(line2);
+                                keepmerging = true;
+                                break loopcore;
+                            }
+                        }
+                    }
+                }
+            }
+            //new SVGBuilder(this, "Test" + (pic++)).exportToSVG();
+        }
+
+        System.out.println("Post-merging removed " + (prevlines - this.lines.size()) + " lines");
+        prevlines = this.lines.size();
+
         this.calcNeighbourLines();
         Collection<Set<Line>> linecomps = this.getLineComponents();
         System.out.println("Line building disconnected components: " + linecomps.stream().mapToInt(Set::size).summaryStatistics());
@@ -584,8 +641,8 @@ public class Graph {
             this.calcNeighbourLines();
         }
         System.out.println("Component connecting added " + (this.lines.size() - prevlines) + " lines");
+        this.lines.forEach(Line::verify);
+        System.out.println("Lines verified");
         System.out.println("Built lines stats: " + this.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
-
-        System.out.println("Neighbour lines calculated");
     }
 }
