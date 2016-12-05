@@ -32,7 +32,7 @@ public class StatJSON {
                 .add("Nodes", edgestats.getCount())
                 .add("Edges", edgestats.getSum() / 2)
                 .add("MinNeighbs", edgestats.getMin())
-                .add("AvgNeighbs", edgestats.getMin())
+                .add("AvgNeighbs", edgestats.getAverage())
                 .add("MaxNeighbs", edgestats.getMax())
                 .add("LineLength", graph.getLineStats())
                 ;

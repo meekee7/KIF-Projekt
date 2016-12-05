@@ -39,10 +39,9 @@ public class Main {
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
-        cityfilters.put("VBB", CityFilter::VBB);
+        //cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
-        //cityfilters.put("BerlinNoFerry", CityFilter::BerlinNoFerry);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
@@ -60,31 +59,19 @@ public class Main {
             GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
             new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
-            //graphs.add(graph);
-            //IntSummaryStatistics switchroutestats = graph.getSwitchRouteStats();
-            //System.out.println("Switch route stats: " + switchroutestats);
+            IntSummaryStatistics switchroutestats = graph.getSwitchRouteStats();
+            System.out.println("Switch route stats: " + switchroutestats);
 
             StatJSON stats = new StatJSON();
             stats.add(graph);
-            //stats.add("SwitchRouteStats", switchroutestats);
+            stats.add("SwitchRouteStats", switchroutestats);
             statJSONs.add(stats);
             Graph origlinegraph = new OrigGraph();
             origlinegraph.parseGTFS(data, name, predicate);
-           // IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
+            IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
             stats.add("OrigLines", origlinegraph.getLineStats());
-            //stats.add("OrigSwitchRouteStats", origswitchroutestats);
-            //System.out.println("OrigLineGraph SwitchRouteStats: " + origswitchroutestats);
-            origlinegraph.getNodes().stream()
-                    .filter(x -> x.getName().equals("S Hegermühle")).findFirst().ifPresent(y ->
-                    System.err.println(name +  " Hegermühle: " +
-                            y.getLines().stream().map(x -> (OriginalLine) x)
-                                    .map(x -> x.getName() + "-" + x.getAgency()).collect(Collectors.toList())));
-
-            origlinegraph.getNodes().stream()
-                    .filter(x -> x.getName().equals("S Strausberg Bhf")).findFirst().ifPresent(y ->
-                    System.err.println(name +  " Strausberg: " +
-                            y.getLines().stream().map(x -> (OriginalLine) x)
-                                    .map(x -> x.getName() + "-" + x.getAgency()).collect(Collectors.toList())));
+            stats.add("OrigSwitchRouteStats", origswitchroutestats);
+            System.out.println("OrigLineGraph SwitchRouteStats: " + origswitchroutestats);
 
             System.out.println("-- END " + name + " --");
         });
@@ -132,17 +119,17 @@ public class Main {
 
         Main.buildAllGraphs();
 
-/*
-        Graph graph = GraphIO.read("VBB-Daten/BerlinStreet.xml");
-        Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
-        Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();
-        System.out.println(graph.getShortestPathWeighted(start,end).stream().map(Node::getName).collect(Collectors.toList()));
-*/
-/*        graph.buildLines();
-        System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
-        graph.getLines().forEach(x -> System.out.println(x.getStops()));
-        new SVGBuilder(graph, "PotsdamWithLines").exportToSVG();
-*/
+
+//        Graph graph = GraphIO.read("VBB-Daten/Brandenburg.xml");
+        //Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
+        //Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();
+        //System.out.println(graph.getShortestPathWeighted(start,end).stream().map(Node::getName).collect(Collectors.toList()));
+
+//        graph.buildLines();
+//        System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
+//        graph.getLines().forEach(x -> System.out.println(x.getStops()));
+//        new SVGBuilder(graph, "GraphViewer/data/BrandenburgSVG").exportToSVG();
+
 
         //MyLogger.l.info("Nodes: " + graph.getNodes().size());
         //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));

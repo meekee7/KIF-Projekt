@@ -23,25 +23,31 @@ public class CoordTransform {
 
         System.out.println("North: " + north + " South: " + south + " East: " + east + " West: " + west);
 
-        double xscale = 800.0 / (Math.abs(east - west));
-        double yscale = 800.0 / (Math.abs(north - south));
+        double fullwidth = 800.0;
+        double fullheight = 800.0;
+
+        double xscale = fullwidth / (Math.abs(east - west));
+        double yscale = fullheight / (Math.abs(north - south));
 
         double xtrans = -west;
         double ytrans = -south;
 
-        double angle = Math.PI * 0.5;
+        double angle = Math.PI * -0.5;
 
         AffineTransform subtractmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, xtrans, ytrans);
-        AffineTransform rotmat = new AffineTransform(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0.0,0.0);
-        AffineTransform flipmat = new AffineTransform(-1.0, 0.0, 0.0, 1.0, 0.0,0.0);
         AffineTransform scalemat = new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
         AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 50.0);
+        AffineTransform pluscentermat = new AffineTransform(1.0, 0.0, 0.0, 1.0, fullwidth*0.5, fullheight*0.5);
+        AffineTransform minuscentermat = new AffineTransform(1.0, 0.0, 0.0, 1.0, fullwidth * -0.5, fullheight * -0.5);
+        AffineTransform rotmat = new AffineTransform(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0.0, 0.0);
+
 
         this.matrix = new AffineTransform();
         this.matrix.setToIdentity();
         this.matrix.concatenate(bordertransmat);
-        //this.matrix.concatenate(flipmat);
-        //this.matrix.concatenate(rotmat);
+        this.matrix.concatenate(pluscentermat);
+        this.matrix.concatenate(rotmat);
+        this.matrix.concatenate(minuscentermat);
         this.matrix.concatenate(scalemat);
         this.matrix.concatenate(subtractmat);
 

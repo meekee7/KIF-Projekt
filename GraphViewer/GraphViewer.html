@@ -29,16 +29,22 @@
     </div>
     <br>
     <div class="row text-center">
+        <span style="color: red; ">
+            Wegen XSS-Problemen funktionieren Teile des Scripts nicht in Chromium/Blink-basierten Browsern.
+        Edge oder Firefox verwenden!</span>
+    </div>
+    <br>
+    <div id="Infotext" class="row text-center">
+        <!-- filled by the Javascript -->
+    </div>
+    <br>
+    <div class="row text-center">
         <input class="checkbox checkbox-inline" checked="true" type="checkbox"
                onChange="setEdgesVisibility(this.checked)">Show Edges
         <input class="checkbox checkbox-inline" checked="true" type="checkbox"
                onChange="setLinesVisibility(this.checked)">Show Lines
         <input class="checkbox checkbox-inline" checked="true" type="checkbox"
                onChange="setNameVisibility(this.checked)">Show Node Names
-    </div>
-    <br>
-    <div id="Infotext" class="row text-center">
-        <!-- filled by the Javascript -->
     </div>
     <hr>
     <div class="row text-center">
@@ -47,7 +53,7 @@
 
         </iframe>
         -->
-        <object id="ImageHolder" type="image/svg+xml" width="1000px" height="1000px">
+        <object id="ImageHolder" type="image/svg+xml" width="1000px" height="1000px" onload="applyVisibility()">
         </object>
 
     </div>
@@ -89,11 +95,10 @@
     function applyVisibility() {
         var svgdoc = document.getElementById("ImageHolder").contentDocument || document.getElementById("ImageHolder").contentWindow.document;
         var textnodes = svgdoc.getElementsByTagName("text");
-        console.log("Preloop");
         for (var i = 0; i < textnodes.length; i++)
             textnodes.item(i).setAttribute("visibility", shownodenames ? "visible" : "hidden");
         var edgenodes = svgdoc.getElementsByTagName("line");
-        for (var i=0; i < edgenodes.length; i++){
+        for (var i = 0; i < edgenodes.length; i++) {
             var node = edgenodes.item(i);
             if (node.getAttribute("style") == "fill:none;")
                 node.setAttribute("visibility", showedges ? "visible" : "hidden");
@@ -101,9 +106,9 @@
                 node.setAttribute("visibility", showlines ? "visible" : "hidden");
         }
         var circlenodes = svgdoc.getElementsByTagName("circle");
-        for (var i=0; i< circlenodes.length; i++){
+        for (var i = 0; i < circlenodes.length; i++) {
             var node = circlenodes.item(i);
-            if (node.getAttribute("r")=="6")
+            if (node.getAttribute("r") == "6")
                 node.setAttribute("visibility", showlines ? "visible" : "hidden");
         }
     }
