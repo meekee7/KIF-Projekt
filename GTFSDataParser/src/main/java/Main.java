@@ -99,40 +99,29 @@ public class Main {
         System.out.println("PROCESSING TIME: " + Duration.between(start, end));
     }
 
-    public static void main(String[] args) {
-/*
-        GtfsReader reader = new GtfsReader();
-        GtfsDaoImpl data = new GtfsDaoImpl();
-        reader.setEntityStore(data);
+    public static void readAllGraphs() {
+        Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
+        //This could be done with reflection
 
-        try {
-            reader.setInputLocation(new File("./VBB-Daten/630229.zip"));
-            reader.run();
-        } catch (IOException e) {
-            MyLogger.l.error(e.toString());
-        }
-*/
-/*
-        Map<String, Integer> map = new HashMap<>(data.getAllStops().size());
-        data.getAllStops().forEach(x -> {
-            if (map.containsKey(x.getName()))
-                map.put(x.getName(), map.get(x.getName()) + 1);
-            else
-                map.put(x.getName(), 1);
+        cityfilters.put("VBB", CityFilter::VBB);
+        cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
+        cityfilters.put("BerlinFull", CityFilter::BerlinFull);
+        cityfilters.put("Brandenburg", CityFilter::Brandenburg);
+        cityfilters.put("Cottbus", CityFilter::Cottbus);
+        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
+        cityfilters.put("Potsdam", CityFilter::Potsdam);
+        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
+
+        cityfilters.forEach((name, predicate) -> {
+            System.out.println("Parsing " + name);
+            Graph graph = GraphIO.read("VBB-Daten/" + name + ".xml");
+            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
         });
-        map.entrySet().stream().filter(x -> x.getValue() > 1).forEach(System.out::println);
-*/
-/*
-        MyLogger.l.info("Start " + ZonedDateTime.now());
+    }
 
-        List<String> testnames =Arrays.asList("U4", "U2");
-        //System.out.println("Start " + entry.getKey());
-        Graph graph = Graph.parseGTFSRegular(data, "GraphicsTest", x -> testnames.contains(x.getShortName())
-        );
-*/
-
+    public static void main(String[] args) {
         Main.buildAllGraphs();
-
+        //Main.readAllGraphs();
 
 //        Graph graph = GraphIO.read("VBB-Daten/Brandenburg.xml");
         //Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
@@ -143,24 +132,5 @@ public class Main {
 //        System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
 //        graph.getLines().forEach(x -> System.out.println(x.getStops()));
 //        new SVGBuilder(graph, "GraphViewer/data/BrandenburgSVG").exportToSVG();
-
-
-        //MyLogger.l.info("Nodes: " + graph.getNodes().size());
-        //MyLogger.l.info("Stops: " + graph.getNodes().stream().map(Network.Node::getName).collect(Collectors.toList()));
-        //MyLogger.l.info("End " + ZonedDateTime.now());
-        //int prev = graph.getNodes().size();
-        //int curr = Integer.MAX_VALUE;
-        //MyLogger.l.info("Edge stats " + graph.getEdgeStats());
-
-
-        //Main.buildAllGraphs();
-
-
-        //MyLogger.l.info("Largest nodes: ");
-        //graph.getNodes().stream().sorted((x, y) -> y.getNeighbours().size() - x.getNeighbours().size()).limit(20).forEach(System.err::println);
-        //GraphIO.write(graph, "GraphicsTest");
-        //System.out.println("Finished " + "GraphicsTest");
-
-        //new SVGBuilder(graph,"BerlinTestSVG").exportToSVG();
     }
 }

@@ -1,6 +1,7 @@
 package Network.IO;
 
 import Network.Graph;
+import Network.Line;
 import Network.Node;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
@@ -8,10 +9,7 @@ import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Point2D;
+import java.awt.geom.*;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -51,33 +49,19 @@ public class SVGBuilder {
     private void drawNodes() {
         this.canvas.setPaint(Color.ORANGE);
         double radius = 2.5;
-        //AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius, -radius);
         this.graph.getNodes().forEach(node -> { //78.5 is the area of a circle with radius 5
             /*
             double radius = Math.sqrt((78.5 + Math.pow(node.getNeighbours().size()*2,2)) / Math.PI);
             AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
             */
-            //Point2D drawpoint = this.transform.transformPoint(node.getPoint());
-            //circlecoord.transform(drawpoint, drawpoint);
-            //this.canvas.setPaint(Color.ORANGE);
             this.drawCircleAt(node.getPoint(), radius);
-            //this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
-            //this.canvas.setPaint(Color.BLACK);
-            //this.canvas.drawString(node.getName(), (float) drawpoint.getX() + 20.0f, (float) drawpoint.getY());
         });
     }
 
     private void drawNodeNames() {
         this.canvas.setPaint(Color.BLACK);
         this.graph.getNodes().forEach(node -> { //78.5 is the area of a circle with radius 5
-            /*
-            double radius = Math.sqrt((78.5 + Math.pow(node.getNeighbours().size()*2,2)) / Math.PI);
-            AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius / 2.0, -radius / 2.0);
-            */
             Point2D drawpoint = this.transform.transformPoint(node.getPoint());
-            //circlecoord.transform(drawpoint, drawpoint);
-            //this.canvas.setPaint(Color.ORANGE);
-            //this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
             this.canvas.drawString(node.getName(), (float) drawpoint.getX() + 20.0f, (float) drawpoint.getY());
         });
     }
@@ -93,7 +77,6 @@ public class SVGBuilder {
         this.canvas.setStroke(new BasicStroke(3.0f));
         this.graph.getLines().forEach(line -> {
             this.canvas.setPaint(line.getColourAWT());
-            //this.canvas.setPaint(new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)));
             line.getStops().stream().reduce(null, (x, y) -> {
                 if (x != null) {
                     this.canvas.draw(new Line2D.Double(
@@ -103,12 +86,25 @@ public class SVGBuilder {
                 }
                 return y;
             });
-            //line.getStartAndEnd().forEach(x -> this.drawCircleAt(x.getPoint(), 6.0));
         });
     }
 
     private void drawLineEnds() {
-        this.canvas.setStroke(new BasicStroke(3.0f));
+        /*
+        double radius = 6.0;
+        this.graph.getNodes().stream().filter(x -> !x.getEndLines().isEmpty()).forEach(node -> {
+            java.util.List<Line> endlines = node.getEndLines();
+            Point2D point = this.transform.transformPoint(node.getPoint());
+            double arc = 360.0 / node.getEndLines().size();
+            for (int i = 0; i < node.getEndLines().size(); i++) {
+                this.canvas.setPaint(endlines.get(i).getColourAWT());
+                this.canvas.draw(new Arc2D.Double(point.getX() - radius, point.getY()-radius,
+                        radius*2.0, radius*2.0,
+                        i * arc, (i + 1) * arc, Arc2D.PIE));
+            }
+        });
+        */
+
         this.graph.getLines().forEach(line -> {
             this.canvas.setPaint(line.getColourAWT());
             line.getStartAndEnd().forEach(x -> this.drawCircleAt(x.getPoint(), 6.0));
