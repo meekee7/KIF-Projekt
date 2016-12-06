@@ -123,6 +123,8 @@ public class Main {
         Main.buildAllGraphs();
         //Main.readAllGraphs();
 
+        //TODO files not created bug
+
 //        Graph graph = GraphIO.read("VBB-Daten/Brandenburg.xml");
         //Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
         //Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();

@@ -24,12 +24,12 @@ public class Location {
         this.lon = lon;
     }
 
-    @XmlAttribute(name = "id")
+    @XmlElement(name = "id")
     public int getInnerid() {
         return innerid;
     }
 
-    @XmlElement(name = "id")
+    @XmlAttribute(name = "id")
     public int getGlobalid() {
         return globalid;
     }

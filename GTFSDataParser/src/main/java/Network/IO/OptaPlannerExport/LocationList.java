@@ -67,9 +67,10 @@ public class LocationList {
             filename += ".xml";
         try {
             Path path = Paths.get(filename);
+            Files.createDirectories(path.getParent());
             if (!Files.exists(path))
                 Files.createFile(path);
-            mar.marshal(this, Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING));
+            mar.marshal(this, Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
             System.out.println("Wrote file " + filename);
         } catch (JAXBException | IOException e) {
             e.printStackTrace();

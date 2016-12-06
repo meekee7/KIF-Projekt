@@ -15,6 +15,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,10 +68,8 @@ public class SVGBuilder {
     }
 
     private void drawCircleAt(Point2D p, double radius) {
-        AffineTransform circlecoord = new AffineTransform(1.0, 0.0, 0.0, 1.0, -radius, -radius);
-        Point2D drawpoint = this.transform.transformPoint(p);
-        circlecoord.transform(drawpoint, drawpoint);
-        this.canvas.fill(new Ellipse2D.Double(drawpoint.getX(), drawpoint.getY(), radius * 2.0, radius * 2.0));
+        p = this.transform.transformPoint(p);
+        this.canvas.fill(new Ellipse2D.Double(p.getX() - radius, p.getY() - radius, radius * 2.0, radius * 2.0));
     }
 
     private void drawLines() {
@@ -90,25 +89,28 @@ public class SVGBuilder {
     }
 
     private void drawLineEnds() {
-        /*
+/*
         double radius = 6.0;
         this.graph.getNodes().stream().filter(x -> !x.getEndLines().isEmpty()).forEach(node -> {
             java.util.List<Line> endlines = node.getEndLines();
             Point2D point = this.transform.transformPoint(node.getPoint());
-            double arc = 360.0 / node.getEndLines().size();
-            for (int i = 0; i < node.getEndLines().size(); i++) {
+            double arc = 360.0 / endlines.size();
+            for (int i = 0; i < endlines.size(); i++) {
                 this.canvas.setPaint(endlines.get(i).getColourAWT());
-                this.canvas.draw(new Arc2D.Double(point.getX() - radius, point.getY()-radius,
-                        radius*2.0, radius*2.0,
+//                this.canvas.fill(new Arc2D.Double(point.getX() - radius, point.getY() - radius, radius * 2.0, radius * 2.0, 100, 270, Arc2D.PIE));
+                this.canvas.fill(new Arc2D.Double(point.getX() - radius, point.getY() - radius,
+                        radius * 2.0, radius * 2.0,
                         i * arc, (i + 1) * arc, Arc2D.PIE));
+                System.out.println("FROM " + (i * arc) + " TO " + (i + 1) * arc + " WITH " + endlines.get(i).getColourAWT());
             }
         });
-        */
+*/
 
         this.graph.getLines().forEach(line -> {
             this.canvas.setPaint(line.getColourAWT());
             line.getStartAndEnd().forEach(x -> this.drawCircleAt(x.getPoint(), 6.0));
         });
+
     }
 
     public void exportToSVG() {
@@ -128,7 +130,7 @@ public class SVGBuilder {
         this.drawNodeNames();
 
         Path path = Paths.get(this.name + ".svg");
-        try (Writer w = new OutputStreamWriter(Files.newOutputStream(path), "UTF-8")) {
+        try (Writer w = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING), "UTF-8")) {
             canvas.stream(w, true);
             System.out.println("Wrote SVG file " + path);
         } catch (Exception e) {

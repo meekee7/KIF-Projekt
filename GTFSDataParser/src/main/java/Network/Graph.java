@@ -224,7 +224,7 @@ public class Graph {
                     .filter(x -> x.getNeighbours().size() == 1
                             || !x.getNeighbours().stream()
                             .allMatch(cluster::contains))
-                    .findAny()
+                    .findFirst()
                     .get();
             chain.add(node);
             cluster.remove(node);
