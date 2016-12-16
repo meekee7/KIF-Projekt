@@ -53,7 +53,7 @@ public class OrigGraph extends Graph {
     }
 
     @Override
-    public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
+    public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate, Collection<Set<Stop>> transferclusters) {
         this.name = name;
 
         System.out.println("Graph building start");
@@ -102,31 +102,6 @@ public class OrigGraph extends Graph {
         Collection<Transfer> alltransfers = data.getAllTransfers().stream()
                 .filter(x -> x.getFromStop() != x.getToStop()) //Skip self-transfers
                 .collect(Collectors.toList());
-        Collection<Set<Stop>> transferclusters = new ArrayList<>(alltransfers.size());
-        alltransfers.forEach(transfer -> {
-            Optional<Set<Stop>> cluster = transferclusters.stream()
-                    .filter(x ->
-                            x.contains(transfer.getFromStop()) || x.contains(transfer.getToStop()))
-                    .findFirst();
-            if (cluster.isPresent()) {
-                cluster.get().add(transfer.getFromStop());
-                cluster.get().add(transfer.getToStop());
-            } else {
-                Set<Stop> newcluster = new HashSet<>();
-                newcluster.add(transfer.getFromStop());
-                newcluster.add(transfer.getToStop());
-                transferclusters.add(newcluster);
-            }
-        });
-
-        System.out.println("Transfer clusters built: " + transferclusters.size());
-
-        /*
-        transferclusters.stream().map(x ->
-                x.stream()
-                        .min((y, z) -> y.getName().length() - z.getName().length())
-        ).map(x->x.get().getName()).forEach(System.out::println);
-        */
 
         Map<Node, Node> nodepointer = new HashMap<>(this.nodes.size());
         this.nodes.forEach(x -> nodepointer.put(x, x));

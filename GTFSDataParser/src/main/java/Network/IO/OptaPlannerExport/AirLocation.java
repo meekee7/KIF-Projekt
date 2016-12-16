@@ -7,17 +7,17 @@ import java.awt.geom.Point2D;
 /**
  * Created by micha on 30.11.2016.
  */
-public class Location {
+public class AirLocation {
     private int innerid;
     private int globalid;
     private double lat;
     private double lon;
 
-    public Location(Point2D point, int innerid){
+    public AirLocation(Point2D point, int innerid){
         this(point.getX(), point.getY(), innerid);
     }
 
-    public Location(double lat, double lon, int innerid) {
+    public AirLocation(double lat, double lon, int innerid) {
         this.innerid = innerid;
         this.globalid = this.innerid + 3;
         this.lat = lat;

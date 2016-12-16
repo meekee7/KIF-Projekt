@@ -1,13 +1,14 @@
 import Network.Graph;
 import Network.IDFactory;
+import Network.IO.DistanceMatrix;
 import Network.IO.GraphIO;
-import Network.IO.OptaPlannerExport.LocationList;
-import Network.IO.SVGBuilder;
+import Network.IO.OptaPlannerExport.AirLocationList;
+import Network.IO.Visual.SVGBuilder;
 import Network.IO.StatJSON;
 import Network.MaxOrigRoute.OrigGraph;
-import Network.MaxOrigRoute.OriginalLine;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
+import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import java.io.File;
@@ -18,7 +19,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Created by micha on 01.11.2016.
@@ -38,6 +38,7 @@ public class Main {
             MyLogger.l.error(e.toString());
         }
 
+        Collection<Set<Stop>> transferclusters = Graph.buildTransferClusters(data);
         //System.out.println(data.getAllRoutes().stream().map(Route::getType).distinct().sorted().collect(Collectors.toList()));
 
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
@@ -52,7 +53,7 @@ public class Main {
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
-        boolean longestshortestpath = true;
+        boolean longestshortestpath = false;
 
         IDFactory ids = new IDFactory();
         List<StatJSON> statJSONs = new ArrayList<>(cityfilters.size());
@@ -60,12 +61,12 @@ public class Main {
             System.out.println("-- START " + name + " --");
 
             Graph graph = new Graph();
-            graph.parseGTFS(data, name, predicate);
+            graph.parseGTFS(data, name, predicate, transferclusters);
             System.out.println("Edge stats " + graph.getEdgeStats());
             graph.buildLines();
             GraphIO.write(graph, "VBB-Daten/" + name);
-            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
-            new LocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
+            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").export();
+            new AirLocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
 
 
             StatJSON stats = new StatJSON();
@@ -79,7 +80,7 @@ public class Main {
                 stats.add("SwitchRouteStats", switchroutestats);
 
                 Graph origlinegraph = new OrigGraph();
-                origlinegraph.parseGTFS(data, name, predicate);
+                origlinegraph.parseGTFS(data, name, predicate, transferclusters);
                 IntSummaryStatistics origswitchroutestats = origlinegraph.getSwitchRouteStats();
                 stats.add("OrigLines", origlinegraph.getLineStats());
                 stats.add("OrigSwitchRouteStats", origswitchroutestats);
@@ -115,20 +116,21 @@ public class Main {
         cityfilters.forEach((name, predicate) -> {
             System.out.println("Parsing " + name);
             Graph graph = GraphIO.read("VBB-Daten/" + name + ".xml");
-            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").exportToSVG();
+
+            graph.buildLinesEdgeComplete();
+            //System.out.println(graph.getSwitchRouteStats());
+            //new DistanceMatrix(graph).calc();
+            //graph.buildLines();
+            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").export();
         });
     }
 
     public static void main(String[] args) {
-        Main.buildAllGraphs();
-        //Main.readAllGraphs();
+        //Main.buildAllGraphs();
+        Main.readAllGraphs();
 
-        //TODO files not created bug
-
-//        Graph graph = GraphIO.read("VBB-Daten/Brandenburg.xml");
-        //Node start = graph.getNodes().stream().filter(x->x.getName().equals("Ahrensfelde/Stadtgrenze (Berlin)")).findFirst().get();
-        //Node end = graph.getNodes().stream().filter(x->x.getName().equals("Landsberger Allee/Blumberger Damm (Berlin)")).findFirst().get();
-        //System.out.println(graph.getShortestPathWeighted(start,end).stream().map(Node::getName).collect(Collectors.toList()));
+        //Graph graph = GraphIO.read("VBB-Daten/Cottbus.xml");
+        //graph.buildLines();
 
 //        graph.buildLines();
 //        System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());

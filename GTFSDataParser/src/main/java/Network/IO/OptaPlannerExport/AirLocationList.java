@@ -23,28 +23,28 @@ import java.util.stream.Collectors;
  * Created by micha on 30.11.2016.
  */
 @XmlRootElement(name = "locationList")
-public class LocationList {
-    private List<Location> locations;
+public class AirLocationList {
+    private List<AirLocation> locations;
     private int globalid = 2;
     private int locid = 0;
     private static Marshaller mar = null;
 
-    public LocationList(){
+    public AirLocationList(){
         this.locations = new ArrayList<>();
     }
 
-    public LocationList(Graph graph){
+    public AirLocationList(Graph graph){
         //TODO this is for airdistance, we need roaddistance
         CoordTransform transform = new CoordTransform(graph);
         this.locations = graph.getNodes().stream()
                 .map(Node::getPoint)
                 .map(transform::transformPoint)
-                .map(x-> new Location(x, this.locid++))
+                .map(x-> new AirLocation(x, this.locid++))
                 .collect(Collectors.toList());
     }
 
     @XmlElement(name = "VrpAirLocation")
-    public List<Location> getLocations() {
+    public List<AirLocation> getLocations() {
         return locations;
     }
 
@@ -55,7 +55,7 @@ public class LocationList {
 
     public void exportToXML(String filename) {
         try {
-            JAXBContext context = JAXBContext.newInstance(LocationList.class);
+            JAXBContext context = JAXBContext.newInstance(AirLocationList.class);
             mar = context.createMarshaller();
             mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         } catch (JAXBException e) {

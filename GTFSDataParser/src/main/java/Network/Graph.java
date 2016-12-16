@@ -1,8 +1,8 @@
 package Network;
 
-import Network.IO.Edge;
+import Network.IO.IOEdge;
+import Network.IO.StatJSON;
 import Network.LineMaking.NeighbourNode;
-import Network.MaxOrigRoute.OriginalLine;
 import Network.LineMaking.UnitableLines;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class Graph {
     protected Collection<Node> nodes = new HashSet<>();
     protected Collection<String> routesIncluded = new ArrayList<>();
-    private Collection<Edge> edges = new HashSet<>();
+    private Collection<IOEdge> ioedges = new HashSet<>();
     private Collection<Line> lines = new HashSet<>();
     protected String name;
 
@@ -36,19 +36,18 @@ public class Graph {
         this.name = name;
     }
 
-    //private int nodeidcounter = 0;
-    //private int lineidcounter = 0;
-
     public Graph() {
     }
 
     /**
-     * This method makes all one-directional links in the graph bidirectional.
+     * This method makes all one-directional links in the graph bidirectional and removes neighbours not in the official node list
      */
-    public void makeEdgesSymmetric() {
-        this.nodes.forEach(x ->
-                x.getNeighbours().forEach(y ->
-                        y.addNeighbour(x)));
+    public void repairEdges() {
+        this.nodes.forEach(x -> {
+            x.getNeighbours().forEach(y ->
+                    y.addNeighbour(x));
+            x.getNeighbours().removeIf(y -> !this.nodes.contains(y));
+        });
     }
 
     /**
@@ -77,23 +76,6 @@ public class Graph {
         return component.size() == this.nodes.size();
     }
 
-    private static Set<Node> collectComponent(Node start) {
-        Queue<Node> queue = new LinkedList<>();
-        Set<Node> checked = new HashSet<>();
-        queue.add(start);
-
-        while (!queue.isEmpty()) {
-            Node node = queue.remove();
-            if (!checked.contains(node)) {
-                node.getNeighbours().stream()
-                        .filter(x -> !checked.contains(x))
-                        .forEach(queue::add);
-                checked.add(node);
-            }
-        }
-        return checked;
-    }
-
     private static Set<Line> collectLineComponent(Line start) {
         Queue<Line> queue = new LinkedList<>();
         Set<Line> checked = new HashSet<>();
@@ -115,6 +97,7 @@ public class Graph {
         this.nodes.removeIf(x -> x.getNeighbours().isEmpty());
         Set<Line> unconnected = new HashSet<>(this.lines);
         LinkedList<Set<Line>> components = new LinkedList<>();
+        this.calcNeighbourLines();
 
         while (!unconnected.isEmpty()) {
             Set<Line> component = collectLineComponent(unconnected.stream().findFirst().get());
@@ -124,10 +107,27 @@ public class Graph {
         return components;
     }
 
+    private static Set<Node> collectComponent(Node start) {
+        Queue<Node> queue = new LinkedList<>();
+        Set<Node> checked = new HashSet<>();
+        queue.add(start);
+
+        while (!queue.isEmpty()) {
+            Node node = queue.remove();
+            if (!checked.contains(node)) {
+                node.getNeighbours().stream()
+                        .filter(x -> !checked.contains(x))
+                        .forEach(queue::add);
+                checked.add(node);
+            }
+        }
+        return checked;
+    }
+
     public void removeDisconnected() {
         this.nodes.removeIf(x -> x.getNeighbours().isEmpty());
         Set<Node> unconnected = new HashSet<>(this.nodes);
-        LinkedList<Collection<Node>> components = new LinkedList<>();
+        LinkedList<Set<Node>> components = new LinkedList<>();
 
         while (!unconnected.isEmpty()) {
             Set<Node> component = collectComponent(unconnected.stream().findFirst().get());
@@ -135,16 +135,11 @@ public class Graph {
             components.add(component);
         }
 
-        //components.remove(max);
-        //System.out.println("Disconnected: " + components.size());
-        //components.forEach(System.out::println);
+        System.out.println("Components: " + components.stream().mapToInt(Collection::size).summaryStatistics());
 
-        this.nodes = components.stream()
-                .max(Comparator.comparingInt(Collection::size))
-                .get();
-        //this.nodes = components.stream()
-        //.max((x, y) -> x.size() - y.size())
-        //        .get();
+        this.nodes = components.stream().max(Comparator.comparingInt(Collection::size)).get();
+
+        //System.out.println(components.stream().filter(x -> x != this.nodes).map(x -> x.stream().map(Node::getName).collect(Collectors.toList())).collect(Collectors.toList()));
     }
 
     public IntSummaryStatistics getEdgeStats() {
@@ -177,13 +172,23 @@ public class Graph {
      */
     @XmlElementWrapper(name = "edges")
     @XmlElement(name = "e")
-    public Collection<Edge> getEdges() {
+    public Collection<IOEdge> getIOEdges() {
         this.nodes.forEach(x ->
                 x.getNeighbours().forEach(y ->
-                        this.edges.add(new Edge(x.id, y.id))
+                        this.ioedges.add(new IOEdge(x.getId(), y.getId()))
                 )
         );
-        return this.edges;
+        return this.ioedges;
+    }
+
+    public Collection<Edge> getEdges() {
+        Collection<Edge> edges = new HashSet<>(this.nodes.size() * 2);
+        this.nodes.forEach(x ->
+                x.getNeighbours().forEach(y ->
+                        edges.add(new Edge(x, y))
+                )
+        );
+        return edges;
     }
 
     @XmlElementWrapper(name = "lines")
@@ -202,7 +207,7 @@ public class Graph {
         this.nodes.forEach(x -> x.getNeighbours().clear());
         Map<Integer, Node> nodemap = new HashMap<>(this.nodes.size());
         this.nodes.forEach(x -> nodemap.put(x.id, x));
-        this.edges.forEach(edge -> {
+        this.ioedges.forEach(edge -> {
             nodemap.get(edge.getA()).addNeighbour(nodemap.get(edge.getB()));
             nodemap.get(edge.getB()).addNeighbour(nodemap.get(edge.getA()));
         });
@@ -345,7 +350,7 @@ public class Graph {
         this.lines.forEach(Line::calcNeighbourLines);
     }
 
-    public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate) {
+    public void parseGTFS(GtfsDaoImpl data, String name, Predicate<Route> routepredicate, Collection<Set<Stop>> transferclusters) {
         this.name = name;
 
         System.out.println("Graph building start");
@@ -402,10 +407,45 @@ public class Graph {
         System.out.println("Edges first pass");
 
         this.getNodes().addAll(stopmap.values());
-        this.makeEdgesSymmetric();
+        this.repairEdges();
 
         System.out.println("Edges second pass");
 
+        transferclusters.stream()
+                .map(x -> x.stream()
+                        .filter(stops::contains)
+                        .map(stopmap::get)
+                        .collect(Collectors.toList())
+                ).forEach(this::mergeNodes);
+
+        System.out.println("Transfer clusters merged, nodes remaining: " + this.getNodes().size());
+
+        this.repairEdges();
+        //graph.removeStraps();
+        System.out.println("Edges third pass");
+
+        this.removeDisconnected();
+        this.repairEdges();
+
+        System.out.println("Graph removed disconnected components, nodes remaining: "
+                + this.getNodes().size());
+
+        //System.out.println("Pre-chain edge stats:");
+        //System.out.println(graph.getEdgeStats());
+
+        int curr = this.getNodes().size();
+        int prev = Integer.MAX_VALUE;
+        while (curr < prev) { //Repeat until fixpoint is reached
+            prev = curr;
+            this.collapseChains();
+            this.repairEdges();
+            curr = this.getNodes().size();
+        }
+
+        System.out.println("Graph collapsed chains, nodes remaining: " + this.getNodes().size());
+    }
+
+    public static Collection<Set<Stop>> buildTransferClusters(GtfsDaoImpl data) {
         Collection<Transfer> alltransfers = data.getAllTransfers().stream()
                 .filter(x -> x.getFromStop() != x.getToStop()) //Skip self-transfers
                 .collect(Collectors.toList());
@@ -425,48 +465,33 @@ public class Graph {
                 transferclusters.add(newcluster);
             }
         });
+        System.out.println("Transfer cluster stats: " + transferclusters.stream().mapToInt(Set::size).summaryStatistics());
+        return transferclusters;
+    }
 
-        System.out.println("Transfer clusters built: " + transferclusters.size());
+    public void buildLinesEdgeComplete() {
+        this.lines.clear();
+        this.nodes.forEach(x -> x.getLines().clear());
+        System.out.println("Line building start");
+        IDFactory lineIDs = new IDFactory();
+        Random random = new Random(23424589798L);
 
-        /*
-        transferclusters.stream().map(x ->
-                x.stream()
-                        .min((y, z) -> y.getName().length() - z.getName().length())
-        ).map(x->x.get().getName()).forEach(System.out::println);
-        */
+        this.getEdges().forEach(edge -> {
+            Line line = new Line(lineIDs.createID(), random, edge.getAnode());
+            line.addFitting(edge.getBnode());
+            this.lines.add(line);
+        });
 
-        transferclusters.stream()
-                .map(x -> x.stream()
-                        .filter(stops::contains)
-                        .map(stopmap::get)
-                        .collect(Collectors.toList())
-                ).forEach(this::mergeNodes);
+        AtomicInteger counter = new AtomicInteger(0);
+        this.mergeLines(() -> {
+            if (counter.incrementAndGet() % 100 == 0)
+                System.out.println("Merge " + counter.intValue());
+        });
+        this.lines.forEach(Line::verify);
+        System.out.println("Lines verified");
+        System.out.println("Built lines stats: " + this.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
+        System.out.println("Line building disconnected components: " + this.getLineComponents().stream().mapToInt(Set::size).summaryStatistics());
 
-        System.out.println("Transfer clusters merged, nodes remaining: " + this.getNodes().size());
-
-        this.makeEdgesSymmetric();
-        //graph.removeStraps();
-        System.out.println("Edges third pass");
-
-        this.removeDisconnected();
-        this.makeEdgesSymmetric();
-
-        System.out.println("Graph removed disconnected components, nodes remaining: "
-                + this.getNodes().size());
-
-        //System.out.println("Pre-chain edge stats:");
-        //System.out.println(graph.getEdgeStats());
-
-        int curr = this.getNodes().size();
-        int prev = Integer.MAX_VALUE;
-        while (curr < prev) { //Repeat until fixpoint is reached
-            prev = curr;
-            this.collapseChains();
-            this.makeEdgesSymmetric();
-            curr = this.getNodes().size();
-        }
-
-        System.out.println("Graph collapsed chains, nodes remaining: " + this.getNodes().size());
     }
 
     public void buildLines() {
@@ -476,7 +501,14 @@ public class Graph {
 
         Random random = new Random(345345234L); //Arbitrary value
         IDFactory lineIDs = new IDFactory();
-        int pic = 0;
+        final AtomicInteger pic = new AtomicInteger(0);
+        List<StatJSON> stats = new LinkedList<>();
+        String basename = "./Sequences/" + this.name + "/" + this.name;
+        //Runnable imgmaker = pic::incrementAndGet;
+        Runnable imgmaker = () -> {
+        };
+        //Runnable imgmaker = () -> new SVGBuilder(Graph.this, basename + pic.getAndIncrement()).export();
+        imgmaker.run();
         while (this.getNodes().stream().anyMatch(x -> x.getLines().isEmpty())) {
             Collection<Node> singles = this.getNodes().stream()
                     .filter(x -> x.getLines().isEmpty())
@@ -507,56 +539,10 @@ public class Graph {
                                     .ifPresent(node -> line.addToPlace(node, x))
                     //TODO maybe find an adequate heuristic
             ));
-            boolean keepmerging = true;
-            while (keepmerging) {
-                keepmerging = false;
-                loopcore:
-                {
-                    for (Node node : this.getNodes()) {
-                        List<Line> endlines = node.getEndLines().stream()
-                                .sorted(Comparator.comparingInt(x -> x.getStops().size()))
-                                .collect(Collectors.toList());
-                        if (endlines.size() >= 2) {
-                            if (endlines.get(0).canAbsorb(endlines.get(1), node)) {
-                                endlines.get(0).absorbLine(endlines.get(1), node);
-                                this.lines.remove(endlines.get(1));
-                                keepmerging = true;
-                                break loopcore;
-                            }
-                        } else {
-                            List<NeighbourNode> neighbourswithends = node.getNeighbours().stream()
-                                    .map(x -> new NeighbourNode(x, node))
-                                    .filter(NeighbourNode::isValid)
-                                    .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
-                                    .collect(Collectors.toList());
-                            if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
-                                Line myline = endlines.get(0);
-                                Line otherline = neighbourswithends.get(0).getMinline();
-                                otherline.addFitting(node);
-                                if (myline.canAbsorb(otherline, node)) {
-                                    myline.absorbLine(otherline, node);
-                                    this.lines.remove(otherline);
-                                    keepmerging = true;
-                                    break loopcore;
-                                }
-                            } else if (neighbourswithends.size() >= 2) {
-                                Line line1 = neighbourswithends.get(0).getMinline();
-                                Line line2 = neighbourswithends.get(1).getMinline();
-                                if (line1.canAbsorb(line2, node)) {
-                                    line1.addFitting(node);
-                                    line2.addFitting(node);
-                                    line1.absorbLine(line2, node);
-                                    this.lines.remove(line2);
-                                    keepmerging = true;
-                                    break loopcore;
-                                }
-                            }
-                        }
-                    }
-                }
-                //new SVGBuilder(this, "Test" + (pic++)).exportToSVG();
-            }
+            imgmaker.run();
+            mergeLines(imgmaker);
         }
+
         System.out.println("Basic lines built, expanding");
         AtomicInteger changed = new AtomicInteger(Integer.MAX_VALUE); //An object to bypass restrictions of lambdas
         while (changed.intValue() != 0) {
@@ -570,10 +556,38 @@ public class Graph {
                             changed.incrementAndGet();
                         });
                     });
+            imgmaker.run();
         }
+        System.out.println("Expansion finished, post-merging");
 
         int prevlines = this.lines.size();
+        mergeLines(imgmaker);
+        System.out.println("Post-merging removed " + (prevlines - this.lines.size()) + " lines");
+        prevlines = this.lines.size();
 
+        this.calcNeighbourLines();
+        Collection<Set<Line>> linecomps = this.getLineComponents();
+        System.out.println("Line building disconnected components: " + linecomps.stream().mapToInt(Set::size).summaryStatistics());
+        for (Collection<Set<Line>> components = linecomps; components.size() != 1; components = this.getLineComponents()) {
+            Set<Line> minset = components.stream().min(Comparator.comparingInt(Set::size)).get();
+            Set<Line> maxset = components.stream().filter(x -> x != minset).min(Comparator.comparingInt(Set::size)).get();
+            Line minline = minset.stream().findFirst().get();
+            Line maxline = maxset.stream().findFirst().get();
+            List<Node> path = this.getShortestPathWeighted(minline.getStart(), maxline.getEnd());
+            Line newline = new Line(lineIDs.createID(), random, path);
+            this.lines.add(newline);
+            this.calcNeighbourLines();
+            imgmaker.run();
+        }
+        imgmaker.run();
+        System.out.println("Component connecting added " + (this.lines.size() - prevlines) + " lines");
+        this.lines.forEach(Line::verify);
+        System.out.println("Lines verified");
+        System.out.println("Built lines stats: " + this.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
+        System.out.println("PICS: " + pic.get());
+    }
+
+    private void mergeLines(Runnable imagemaker) {
         boolean keepmerging = true;
         while (keepmerging) {
             keepmerging = false;
@@ -621,28 +635,14 @@ public class Graph {
                     }
                 }
             }
-            //new SVGBuilder(this, "Test" + (pic++)).exportToSVG();
+            imagemaker.run();
         }
+    }
 
-        System.out.println("Post-merging removed " + (prevlines - this.lines.size()) + " lines");
-        prevlines = this.lines.size();
-
-        this.calcNeighbourLines();
-        Collection<Set<Line>> linecomps = this.getLineComponents();
-        System.out.println("Line building disconnected components: " + linecomps.stream().mapToInt(Set::size).summaryStatistics());
-        for (Collection<Set<Line>> components = linecomps; components.size() != 1; components = this.getLineComponents()) {
-            Set<Line> minset = components.stream().min(Comparator.comparingInt(Set::size)).get();
-            Set<Line> maxset = components.stream().filter(x -> x != minset).min(Comparator.comparingInt(Set::size)).get();
-            Line minline = minset.stream().findFirst().get();
-            Line maxline = maxset.stream().findFirst().get();
-            List<Node> path = this.getShortestPathWeighted(minline.getStart(), maxline.getEnd());
-            Line newline = new Line(lineIDs.createID(), random, path);
-            this.lines.add(newline);
-            this.calcNeighbourLines();
-        }
-        System.out.println("Component connecting added " + (this.lines.size() - prevlines) + " lines");
-        this.lines.forEach(Line::verify);
-        System.out.println("Lines verified");
-        System.out.println("Built lines stats: " + this.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
+    public static double getPathLength(List<Node> path) {
+        double length = 0;
+        for (int i = 1; i < path.size(); i++)
+            length += path.get(i).getDistance(path.get(i - 1));
+        return length;
     }
 }
