@@ -4,6 +4,7 @@ import Network.IO.IOEdge;
 import Network.IO.StatJSON;
 import Network.LineMaking.NeighbourNode;
 import Network.LineMaking.UnitableLines;
+import Network.Utils.Edge;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.*;
 
@@ -213,6 +214,7 @@ public class Graph {
         });
         this.lines.forEach(x -> x.postIOIntegration(nodemap));
         this.lines.forEach(x -> x.getStops().forEach(y -> y.getLines().add(x)));
+        this.calcNeighbourLines();
     }
 
     private static void walkSmallNode(Set<Node> target, Node node) {
@@ -272,9 +274,14 @@ public class Graph {
         this.nodes.forEach(x -> distance.put(x, Double.POSITIVE_INFINITY));
         this.nodes.forEach(x -> prev.put(x, null));
         distance.replace(start, 0.0);
-        Set<Node> queue = new HashSet<>(this.nodes);
+        NavigableSet<Node> queue = new TreeSet<>(Comparator.comparingDouble(distance::get));
+        queue.add(start);
+
+        //Set<Node> queue = new HashSet<>(this.nodes);
+
         while (!queue.isEmpty()) queueloop:{
-            Node current = queue.stream().min(Comparator.comparingDouble(distance::get)).get();
+            Node current = queue.pollFirst();
+            //Node current = queue.stream().min(Comparator.comparingDouble(distance::get)).get();
             queue.remove(current);
             if (current == end)
                 break queueloop;
@@ -283,6 +290,7 @@ public class Graph {
                 if (dist < distance.get(neighbour)) {
                     distance.put(neighbour, dist);
                     prev.put(neighbour, current);
+                    queue.add(neighbour);
                 }
             });
         }
@@ -293,6 +301,39 @@ public class Graph {
         if (path.get(0) != start)
             path.add(0, start);
         return path;
+    }
+
+    public Journey getJourney(Node start, Node end, double switchcost) {
+        Set<Line> startlines = start.getLines();
+        Set<Line> endlines = end.getLines();
+        Optional<Line> direct = startlines.stream().filter(endlines::contains).findFirst();
+        if (direct.isPresent()) {
+            Journey.Step step = new Journey.Step(start, end, direct.get(), direct.get().endNodeDirected(start, end));
+            return new Journey(start, end, Collections.singletonList(step));
+        }
+
+        List<List<Line>> routes = new ArrayList<>(startlines.size() * endlines.size());
+        startlines.forEach(s -> endlines.forEach(e -> routes.add(this.getSwitchRoute(s, e))));
+        List<Line> shortest = routes.stream().min(Comparator.comparingInt(List::size)).get();
+        List<Journey.Step> steps = new ArrayList<>(shortest.size());
+        Node prevstep = start;
+        for (int i = 1; i < shortest.size(); i++) {
+            Line prev = shortest.get(i - 1);
+            Line curr = shortest.get(i);
+            Node pv = prevstep;
+            List<Node> shortpath =
+                    prev.getStops().stream()
+                            .filter(x -> curr.getStops().contains(x))
+                            .map(x -> this.getShortestPathWeighted(pv, x))
+                            .min(Comparator.comparingInt(List::size))
+                            .get();
+            Node intersect = shortpath.get(shortpath.size() - 1);
+            steps.add(new Journey.Step(prevstep, intersect, prev, prev.endNodeDirected(prevstep, intersect)));
+            prevstep = intersect;
+        }
+        Line lastline = shortest.get(shortest.size() - 1);
+        steps.add(new Journey.Step(prevstep, end, lastline, lastline.endNodeDirected(prevstep, end)));
+        return new Journey(start, end, steps);
     }
 
     /**
@@ -328,11 +369,59 @@ public class Graph {
         return path;
     }
 
+
+    protected IntSummaryStatistics getDiameterLine(Line start) {
+        //THIS METHOD IS BROKEN
+        Map<Line, Integer> distances = new HashMap<>();
+        this.lines.forEach(x -> distances.put(x, Integer.MAX_VALUE));
+        distances.put(start, 0);
+        Queue<Line> queue = new LinkedList<>();
+        queue.add(start);
+        Set<Line> covered = new HashSet<>(this.lines.size());
+
+        while (!queue.isEmpty()) {
+            Line elem = queue.poll();
+            if (!covered.contains(elem)) {
+                covered.add(elem);
+                int dist = distances.get(elem);
+                elem.getNeighbourLines().stream().filter(x -> !covered.contains(x)).forEach(x -> {
+                    distances.put(x, dist + 1);
+                    queue.add(x);
+                });
+            }
+        }
+        distances.entrySet().stream().filter(x -> x.getValue() == 0 && x.getKey() != start).findFirst().ifPresent(x ->
+        {
+            throw new IllegalStateException(x.getKey().toString());
+        });
+        //System.out.println("LINE " + start.getId());
+        //distances.forEach((x, y) -> System.out.println(x.getId() + " | " + y));
+        if (covered.size() != this.lines.size())
+            throw new IllegalStateException(covered.size() + " / " + this.lines.size());
+        return distances.values().stream().mapToInt(x -> x).filter(x -> x >= 2).summaryStatistics();
+    }
+
+
     public IntSummaryStatistics getSwitchRouteStats() {
         this.calcNeighbourLines();
+        //IntSummaryStatistics result = new IntSummaryStatistics();
+        //this.lines.forEach(x -> result.combine(this.getDiameterLine(x)));
+        //return result;
+
         Set<UnitableLines> pairs = new HashSet<>(this.lines.size() * this.lines.size() / 2);
         this.lines.forEach(x -> this.lines.forEach(y -> pairs.add(new UnitableLines(x, y, null))));
         AtomicInteger counter = new AtomicInteger(0);
+
+        pairs.parallelStream()
+                .filter(x -> x.getA() != x.getB())
+                .map(x -> {
+                    if (counter.incrementAndGet() % 100_000 == 0)
+                        System.out.println(counter.intValue() + " out of " + (pairs.size() - this.lines.size()));
+                    return this.getSwitchRoute(x.getA(), x.getB());
+                })
+                .max(Comparator.comparingInt(List::size))
+                .ifPresent(x -> System.out.println(x.stream().map(Line::getId).collect(Collectors.toList())));
+
         return pairs.parallelStream()
                 .filter(x -> x.getA() != x.getB())
                 .map(x -> {
@@ -344,6 +433,12 @@ public class Graph {
                 .summaryStatistics();
         //.max(Comparator.comparingInt(List::size))
         //.get();
+    }
+
+    public IntSummaryStatistics getSwitchRouteStatsAlt() {
+        IntSummaryStatistics result = new IntSummaryStatistics();
+        this.lines.forEach(x -> result.combine(this.getDiameterLine(x)));
+        return result;
     }
 
     private void calcNeighbourLines() {
@@ -597,6 +692,8 @@ public class Graph {
                     List<Line> endlines = node.getEndLines().stream()
                             .sorted(Comparator.comparingInt(x -> x.getStops().size()))
                             .collect(Collectors.toList());
+                    Collections.shuffle(endlines);
+                    //Collections.reverse(endlines);
                     if (endlines.size() >= 2) {
                         if (endlines.get(0).canAbsorb(endlines.get(1), node)) {
                             endlines.get(0).absorbLine(endlines.get(1), node);
@@ -610,6 +707,8 @@ public class Graph {
                                 .filter(NeighbourNode::isValid)
                                 .sorted(Comparator.comparingInt(x -> x.getMinline().getStops().size()))
                                 .collect(Collectors.toList());
+                        Collections.shuffle(endlines);
+                        //Collections.reverse(neighbourswithends);
                         if (neighbourswithends.size() >= 1 && endlines.size() == 1) {
                             Line myline = endlines.get(0);
                             Line otherline = neighbourswithends.get(0).getMinline();

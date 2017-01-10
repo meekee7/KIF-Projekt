@@ -1,6 +1,6 @@
-package Network;
+package Network.Utils;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import Network.Node;
 
 /**
  * Created by micha on 08.11.2016.

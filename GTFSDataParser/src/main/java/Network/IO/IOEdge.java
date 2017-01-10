@@ -1,6 +1,5 @@
 package Network.IO;
 
-import Network.Edge;
 import Network.Node;
 
 import javax.xml.bind.annotation.XmlAttribute;

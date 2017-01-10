@@ -1,8 +1,8 @@
 package Network.IO.Visual;
 
 import Network.Graph;
-import Network.IO.CoordTransform;
-import Network.Edge;
+import Network.Utils.CoordTransform;
+import Network.Utils.Edge;
 import Network.Line;
 
 import java.awt.*;

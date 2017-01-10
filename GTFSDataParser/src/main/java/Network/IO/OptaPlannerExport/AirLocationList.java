@@ -1,7 +1,7 @@
 package Network.IO.OptaPlannerExport;
 
 import Network.Graph;
-import Network.IO.CoordTransform;
+import Network.Utils.CoordTransform;
 import Network.Node;
 
 import javax.xml.bind.JAXBContext;

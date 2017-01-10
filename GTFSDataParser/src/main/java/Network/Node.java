@@ -1,5 +1,7 @@
 package Network;
 
+import Network.Utils.Identifiable;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import java.awt.geom.Point2D;
@@ -9,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * Created by micha on 01.11.2016.
  */
-public class Node {
+public class Node implements Identifiable {
     protected int id;
     protected String name;
     protected double lat;
@@ -29,6 +31,7 @@ public class Node {
     }
 
     @XmlAttribute
+    @Override
     public int getId() {
         return id;
     }

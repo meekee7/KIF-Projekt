@@ -1,11 +1,12 @@
 import Network.Graph;
 import Network.IDFactory;
-import Network.IO.DistanceMatrix;
+import Network.Node;
 import Network.IO.GraphIO;
 import Network.IO.OptaPlannerExport.AirLocationList;
 import Network.IO.Visual.SVGBuilder;
 import Network.IO.StatJSON;
 import Network.MaxOrigRoute.OrigGraph;
+import Simulation.LineSimulation.LineSimulator;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
@@ -53,7 +54,7 @@ public class Main {
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
 
-        boolean longestshortestpath = false;
+        boolean longestshortestpath = true;
 
         IDFactory ids = new IDFactory();
         List<StatJSON> statJSONs = new ArrayList<>(cityfilters.size());
@@ -67,7 +68,6 @@ public class Main {
             GraphIO.write(graph, "VBB-Daten/" + name);
             new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").export();
             new AirLocationList(graph).exportToXML("VBB-Daten/OptaPlanner/Air/OptaAir" + graph.getName());
-
 
             StatJSON stats = new StatJSON();
             stats.add(graph);
@@ -101,10 +101,12 @@ public class Main {
     }
 
     public static void readAllGraphs() {
+        Instant start = Instant.now();
+
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
-        cityfilters.put("VBB", CityFilter::VBB);
+//        cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         cityfilters.put("BerlinFull", CityFilter::BerlinFull);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
@@ -117,24 +119,82 @@ public class Main {
             System.out.println("Parsing " + name);
             Graph graph = GraphIO.read("VBB-Daten/" + name + ".xml");
 
-            graph.buildLinesEdgeComplete();
-            //System.out.println(graph.getSwitchRouteStats());
+            //graph.buildLines();
+            //graph.buildLinesEdgeComplete();
+            //System.out.println("SwitchRouteStats: " +graph.getSwitchRouteStats());
+            //System.out.println("SwitchRouteStats: " +graph.getSwitchRouteStatsAlt());
+            //RoadLocationList rl = new RoadLocationList();
+            //rl.parseGraph(graph);
+            //rl.exportToXML("VBB-Daten/OptaPlanner/Road/OptaRoad" + name);
+            List<Node> nodes = new ArrayList<>(graph.getNodes());
+            Collections.shuffle(nodes);
+            System.out.println(graph.getJourney(nodes.get(0), nodes.get(1), 0.0));
             //new DistanceMatrix(graph).calc();
             //graph.buildLines();
-            new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").export();
+            //new SVGBuilder(graph, "GraphViewer/data/" + name + "SVG").export();
         });
+        Instant end = Instant.now();
+        System.out.println("PROCESSING TIME: " + Duration.between(start, end));
     }
 
     public static void main(String[] args) {
-        //Main.buildAllGraphs();
-        Main.readAllGraphs();
+//        Main.buildAllGraphs();
+        //Main.readAllGraphs();
 
-        //Graph graph = GraphIO.read("VBB-Daten/Cottbus.xml");
+        Graph graph = GraphIO.read("VBB-Daten/Frankfurt.xml");
+        LineSimulator sim = new LineSimulator(graph);
+        for (int i = 0; i < 10000; i++)
+            sim.getNextFrame();
+        sim.printStats();
+        sim.writeStatsToFile("./SimulationData");
         //graph.buildLines();
 
 //        graph.buildLines();
 //        System.out.println(graph.getLines().stream().mapToInt(x -> x.getStops().size()).summaryStatistics());
 //        graph.getLines().forEach(x -> System.out.println(x.getStops()));
 //        new SVGBuilder(graph, "GraphViewer/data/BrandenburgSVG").exportToSVG();
+
+        /*
+
+        GtfsReader reader = new GtfsReader();
+        GtfsDaoImpl data = new GtfsDaoImpl();
+        reader.setEntityStore(data);
+
+        try {
+            reader.setInputLocation(new File("./VBB-Daten/GTFS_VBB_Dez2016_Aug2017_mit_shapes-files.zip"));
+            //reader.setInputLocation(new File("./VBB-Daten/630229.zip"));
+            reader.run();
+        } catch (IOException e) {
+            MyLogger.l.error(e.toString());
+        }
+
+        Map<Trip, Collection<StopTime>> tripmap = new HashMap<>();
+        data.getAllTrips().forEach(x -> tripmap.put(x, new HashSet<>()));
+        data.getAllStopTimes().forEach(x -> tripmap.get(x.getTrip()).add(x));
+
+        System.out.println("Tripmap built");
+
+        tripmap.forEach((trip, stopTimes) -> {
+            Set<Stop> stopset = new HashSet<>();
+            LinkedList<Stop> stoplist = stopTimes.stream().sorted(Comparator.comparingInt(StopTime::getStopSequence))
+                    .map(StopTime::getStop)
+                    .collect(Collectors.toCollection(LinkedList::new));
+            if (stoplist.getFirst() != stoplist.getLast())
+                stoplist.forEach(x -> {
+                    if (stopset.contains(x))
+                        System.out.println("Route " + trip.getRoute().getShortName() + " Trip " + trip.getId() + " Stop " + x.getName());
+                    else
+                        stopset.add(x);
+                });
+        });
+        tripmap.forEach((x, y) -> {
+            if (x.getId().toString().equals("716_56256346"))
+                y.stream().sorted(Comparator.comparingInt(StopTime::getStopSequence))
+                    .map(StopTime::getStop)
+                    .map(Stop::getName)
+                    .forEach(System.out::println);
+        });
+
+        */
     }
 }

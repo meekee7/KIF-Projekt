@@ -1,4 +1,4 @@
-package Network.IO;
+package Network.Utils;
 
 import Network.Graph;
 import Network.Node;
@@ -36,7 +36,8 @@ public class CoordTransform {
 
         AffineTransform subtractmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, xtrans, ytrans);
         AffineTransform scalemat = new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
-        AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 120.0);
+        //AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 120.0);
+        AffineTransform bordertransmat = new AffineTransform(1.0, 0.0, 0.0, 1.0, 50.0, 50.0);
         AffineTransform pluscentermat = new AffineTransform(1.0, 0.0, 0.0, 1.0, width * 0.5, height * 0.5);
         AffineTransform minuscentermat = new AffineTransform(1.0, 0.0, 0.0, 1.0, width * -0.5, height * -0.5);
         AffineTransform rotmat = new AffineTransform(Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0.0, 0.0);

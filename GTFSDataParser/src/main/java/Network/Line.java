@@ -1,5 +1,7 @@
 package Network;
 
+import Network.Utils.Identifiable;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -11,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Created by micha on 29.11.2016.
  */
-public class Line {
+public class Line implements Identifiable {
     private int id;
     protected List<Node> stops = new LinkedList<>();
     private List<Integer> stopIDs = new LinkedList<>();
@@ -155,6 +157,7 @@ public class Line {
     }
 
     @XmlAttribute(name = "id")
+    @Override
     public int getId() {
         return id;
     }
@@ -184,6 +187,13 @@ public class Line {
         return stops;
     }
 
+    public Node endNodeDirected(Node start, Node end) {
+        if (this.stops.indexOf(start) < this.stops.indexOf(end))
+            return this.getEnd();
+        else
+            return this.getStart();
+    }
+
     @XmlElementWrapper(name = "stops")
     @XmlElement(name = "s")
     public List<Integer> getStopIDs() {
@@ -201,5 +211,8 @@ public class Line {
      */
     public void postIOIntegration(Map<Integer, Node> nodemap) {
         this.stops = this.stopIDs.stream().map(nodemap::get).collect(Collectors.toCollection(ArrayList::new));
+        if (this.stops.size() != this.stopIDs.size())
+            throw new IllegalStateException("Stops unequal to StopIDs");
+        this.stops = Collections.unmodifiableList(this.stops);
     }
 }
