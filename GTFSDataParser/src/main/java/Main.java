@@ -13,6 +13,7 @@ import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -138,15 +139,30 @@ public class Main {
     }
 
     public static void main(String[] args) {
-//        Main.buildAllGraphs();
+        //Main.buildAllGraphs();
+        //System.exit(0);
         //Main.readAllGraphs();
 
-        Graph graph = GraphIO.read("VBB-Daten/Frankfurt.xml");
-        LineSimulator sim = new LineSimulator(graph);
-        for (int i = 0; i < 10000; i++)
-            sim.getNextFrame();
-        sim.printStats();
-        sim.writeStatsToFile("./SimulationData");
+        Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
+        //This could be done with reflection
+
+        //cityfilters.put("VBB", CityFilter::VBB);
+        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
+        cityfilters.put("Potsdam", CityFilter::Potsdam);
+        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
+        cityfilters.put("Cottbus", CityFilter::Cottbus);
+        cityfilters.put("Brandenburg", CityFilter::Brandenburg);
+        //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
+        //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
+        cityfilters.forEach((x, y) -> {
+            Graph graph = GraphIO.read("VBB-Daten/" + x + ".xml");
+            LineSimulator sim = new LineSimulator(graph);
+            for (int i = 0; i < 10000; i++)
+                sim.getNextFrame();
+            System.out.println("---STATS---");
+            System.out.println(sim.getStats());
+            sim.writeStatsToFile("./SimulationData");
+        });
         //graph.buildLines();
 
 //        graph.buildLines();

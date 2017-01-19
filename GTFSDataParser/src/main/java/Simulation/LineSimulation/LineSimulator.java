@@ -49,6 +49,7 @@ public class LineSimulator extends Simulator {
             //Load passengers
             List<Passenger> waiting = loc.getPassengers().stream()
                     .map(x -> (LinePassenger) x)
+                    .filter(Passenger::needsPickup)
                     .filter(x -> x.getNextLine() == taxi.getLine() && x.getNextLineEnd() == taxi.getLineEndStop())
                     .collect(Collectors.toList());
             while (!taxi.isFull() && !waiting.isEmpty())

@@ -94,7 +94,21 @@ public class Node implements Identifiable {
     }
 
     public double getDistance(Node other){
-        return this.getPoint().distance(other.getPoint());
+        //http://www.movable-type.co.uk/scripts/latlong.html
+        double R = 6371e3; // metres
+        double φ1 = Math.toRadians(this.getLat());
+        double φ2 = Math.toRadians(other.getLat());
+        double Δφ = Math.toRadians(this.getLat()-other.getLat());
+        double Δλ = Math.toRadians(this.getLon()-other.getLon());
+
+        double a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        double d = R * c;
+        return d;
+        //return this.getPoint().distance(other.getPoint());
     }
 
     public Set<Line> getLines() {
