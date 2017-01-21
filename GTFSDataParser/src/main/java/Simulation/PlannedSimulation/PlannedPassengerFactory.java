@@ -1,4 +1,4 @@
-package Simulation.LineSimulation;
+package Simulation.PlannedSimulation;
 
 import Network.Graph;
 import Network.Journey;
@@ -8,20 +8,20 @@ import Simulation.Factory.PassengerFactory;
 import Simulation.Simulator;
 
 /**
- * Created by micha on 08.01.2017.
+ * Created by micha on 20.01.2017.
  */
-public class LinePassengerFactory extends PassengerFactory {
-    public LinePassengerFactory(Graph graph, Simulator simulator) {
+public class PlannedPassengerFactory extends PassengerFactory {
+    public PlannedPassengerFactory(Graph graph, Simulator simulator) {
         super(graph, simulator);
     }
 
     @Override
     public Passenger createPassenger(Journey journey, int frame) {
-        return new LinePassenger(this.simulator, this.idFactory.createID(), frame, journey);
+        return new PlannedPassenger(this.simulator, this.idFactory.createID(), frame, journey.getStart(), journey.getEnd());
     }
 
     @Override
     public Journey createJourney(Node start, Node end) {
-        return this.graph.getJourney(start, end, 0.0);
+        return new Journey(start, end, null);
     }
 }

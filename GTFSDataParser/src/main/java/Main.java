@@ -1,19 +1,19 @@
 import Network.Graph;
 import Network.IDFactory;
-import Network.Node;
 import Network.IO.GraphIO;
 import Network.IO.OptaPlannerExport.AirLocationList;
-import Network.IO.Visual.SVGBuilder;
 import Network.IO.StatJSON;
+import Network.IO.Visual.SVGBuilder;
 import Network.MaxOrigRoute.OrigGraph;
+import Network.Node;
 import Simulation.LineSimulation.LineSimulator;
+import Simulation.SimulationConfig;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -150,18 +150,29 @@ public class Main {
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-        cityfilters.put("Cottbus", CityFilter::Cottbus);
+//        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
         cityfilters.forEach((x, y) -> {
             Graph graph = GraphIO.read("VBB-Daten/" + x + ".xml");
-            LineSimulator sim = new LineSimulator(graph);
-            for (int i = 0; i < 10000; i++)
-                sim.getNextFrame();
+            //PlannedSimulator sim = new PlannedSimulator(graph);
+            SimulationConfig cfg = new SimulationConfig.Builder()
+                    .capacity(8)
+                    .linefrequency(4)
+                    .spawnfrequency(1)
+                    .spawnshare(0.1)
+                    .speed(1000.0)
+                    .taxirate(0)
+                    .turns(10000)
+                    .assemble();
+
+            LineSimulator sim = new LineSimulator(graph, cfg);
+            sim.simulate();
             System.out.println("---STATS---");
             System.out.println(sim.getStats());
             sim.writeStatsToFile("./SimulationData");
+            sim.denialmap.forEach((a, b) -> System.out.println(a.getId() + " " + b));
         });
         //graph.buildLines();
 

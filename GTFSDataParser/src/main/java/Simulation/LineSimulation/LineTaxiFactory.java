@@ -8,7 +8,10 @@ import Simulation.Entity.Taxi;
 import Simulation.Factory.TaxiFactory;
 import Simulation.Simulator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -22,9 +25,9 @@ public class LineTaxiFactory extends TaxiFactory {
     }
 
     @Override
-    public Collection<Taxi> createTaxis(int number) {
-        int step = 4;
-        int capacity = 8;
+    public Collection<Taxi> createTaxis() {
+        int step = this.simulator.getConfig().getTaxistep();
+        int capacity = this.simulator.getConfig().getCapacity();
         List<Taxi> taxis = new ArrayList<>();
         this.graph.getLines().stream()
                 .filter(x -> x.getStops().size() <= step)
@@ -37,8 +40,11 @@ public class LineTaxiFactory extends TaxiFactory {
                     int size = x.getStops().size();
                     Collections.reverse(pathbackward);
                     for (int i = 0; i < size; i += step) {
-                        taxis.add(new LineTaxi(this.simulator, this.idFactory.createID(), capacity, x, pathforward.stream().skip(i).collect(Collectors.toList())));
-                        taxis.add(new LineTaxi(this.simulator, this.idFactory.createID(), capacity, x, pathbackward.stream().skip(i).collect(Collectors.toList())));
+                        int ix = i; //Because lambdas
+                        if (taxis.stream().map(y -> (LineTaxi) y).noneMatch(y -> y.getLine() == x && ((NodeLocation) y.getLocation()).getNode() == pathforward.get(ix)))
+                            taxis.add(new LineTaxi(this.simulator, this.idFactory.createID(), capacity, x, pathforward.stream().skip(i).collect(Collectors.toList())));
+                        if (taxis.stream().map(y -> (LineTaxi) y).noneMatch(y -> y.getLine() == x && ((NodeLocation) y.getLocation()).getNode() == pathbackward.get(ix)))
+                            taxis.add(new LineTaxi(this.simulator, this.idFactory.createID(), capacity, x, pathbackward.stream().skip(i).collect(Collectors.toList())));
                     }
                 });
         return taxis;
