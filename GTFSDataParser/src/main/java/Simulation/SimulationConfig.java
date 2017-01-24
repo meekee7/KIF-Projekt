@@ -2,6 +2,8 @@ package Simulation;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by micha on 10.01.2017.
@@ -12,6 +14,10 @@ public class SimulationConfig {
         private SimulationConfig config = new SimulationConfig();
 
         public Builder() {
+        }
+
+        public Builder(SimulationConfig config){
+            this.config = config;
         }
 
         public SimulationConfig assemble() {
@@ -38,18 +44,13 @@ public class SimulationConfig {
             return this;
         }
 
-        public Builder linefrequency(int linefrequency) {
+        public Builder linefrequency(Map<Integer, Integer> linefrequency) {
             this.config.linefrequency = linefrequency;
             return this;
         }
 
         public Builder taxirate(double taxirate) {
             this.config.taxirate = taxirate;
-            return this;
-        }
-
-        public Builder taxistep(int taxistep) {
-            this.config.taxistep = taxistep;
             return this;
         }
 
@@ -63,9 +64,8 @@ public class SimulationConfig {
     private int capacity = 8; //8
     private int spawnfrequency = 1; //1
     private double spawnshare = 0.1; //10
-    private int linefrequency = 4; //4
+    private Map<Integer,Integer> linefrequency = new HashMap<>(); //4
     private double taxirate = 0.05; //?
-    private int taxistep = 4; //?
     private int turns = 10000; //10000
 
     public SimulationConfig() {
@@ -92,18 +92,13 @@ public class SimulationConfig {
     }
 
     @XmlElement
-    public int getLinefrequency() {
+    public Map<Integer, Integer> getLinefrequency() {
         return linefrequency;
     }
 
     @XmlElement
     public double getTaxirate() {
         return taxirate;
-    }
-
-    @XmlElement
-    public int getTaxistep() {
-        return taxistep;
     }
 
     @XmlElement

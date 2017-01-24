@@ -10,10 +10,7 @@ import Simulation.Factory.EmptyFaultFactory;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -69,11 +66,11 @@ public class LineSimulator extends Simulator {
                     .map(x -> (LinePassenger) x)
                     .filter(Passenger::needsPickup)
                     .filter(x -> x.getNextLine() == taxi.getLine() && x.getNextLineEnd() == taxi.getLineEndStop())
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
             while (!taxi.isFull() && !waiting.isEmpty())
                 waiting.remove(0).enterTaxi(taxi);
             waiting.forEach(Passenger::incDenied);
-            waiting.forEach(x->denialmap.get(taxi.getLine()).incrementAndGet());
+            waiting.forEach(x -> this.denialmap.get(taxi.getLine()).incrementAndGet());
         });
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation).forEach(taxi -> {
             Node start = ((NodeLocation) taxi.getLocation()).getNode();
@@ -87,5 +84,38 @@ public class LineSimulator extends Simulator {
         //        System.out.println("Taxi " + taxi.getId() + " has prog " + ((EdgeLocation)taxi.getLocation()).getProgress()));
         //this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation).forEach(x ->
         //        System.out.println("Taxi " + x.getId() + " at " + ((NodeLocation) x.getLocation()).getNode().getName()));
+    }
+
+    public static Map<Integer, Integer> findBestDistribution(Graph graph, SimulationConfig config) {
+        Map<Integer, Integer> prevmap = new HashMap<>();
+        Map<Integer, Integer> currmap = new HashMap<>(config.getLinefrequency());
+        int iterations = 0;
+        while (!currmap.equals(prevmap) && iterations <= 15) {
+            LineSimulator sim = new LineSimulator(graph, config);
+            sim.simulate();
+            prevmap = currmap;
+            Map<Integer, Integer> newmap = new HashMap<>(currmap);
+
+            if (sim.passengers.stream().filter(Passenger::isDelivered).mapToDouble(Passenger::getHappinessIndex).max().getAsDouble() > 100.0) {
+                sim.denialmap.entrySet().stream().filter(x -> x.getValue().get() > 100_000)
+                        .map(x -> x.getKey().getId())
+                        .forEach(x -> newmap.replace(x, newmap.get(x) / 2));
+/*
+            Map<Line, IntSummaryStatistics> lineload = new HashMap<>();
+            graph.getLines().forEach(x -> lineload.put(x, new IntSummaryStatistics()));
+            sim.taxis.stream().map(x -> (LineTaxi) x).forEach(x -> lineload.get(x.getLine()).combine(x.getLoadoutstats()));
+            lineload.entrySet().stream().filter(x -> x.getValue().getAverage() < 1.0)
+                    .map(x -> x.getKey().getId())
+                    .forEach(x -> newmap.replace(x, newmap.get(x) + 1));
+*/
+                newmap.keySet().stream().filter(x -> newmap.get(x) == 0).forEach(x -> newmap.replace(x, 1)); //Minimum of 1 for each line
+                newmap.keySet().stream().filter(x -> newmap.get(x) > 10).forEach(x -> newmap.replace(x, 10)); //Maximum of 10 for each line
+            }
+
+            currmap = newmap;
+            System.out.println("Iteration " + iterations++ + " completed");
+        }
+        System.out.println("FINISHED DISTRIBUTION CALCULATION");
+        return currmap;
     }
 }

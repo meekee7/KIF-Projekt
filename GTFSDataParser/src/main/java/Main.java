@@ -148,14 +148,15 @@ public class Main {
 
         //cityfilters.put("VBB", CityFilter::VBB);
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
-        cityfilters.put("Potsdam", CityFilter::Potsdam);
-        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-        cityfilters.put("Cottbus", CityFilter::Cottbus);
+//        cityfilters.put("Potsdam", CityFilter::Potsdam);
+//        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
+//        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
         cityfilters.forEach((x, y) -> {
             Graph graph = GraphIO.read("VBB-Daten/" + x + ".xml");
+            graph.buildPathCache();
             //PlannedSimulator sim = new PlannedSimulator(graph);
             SimulationConfig cfg = new SimulationConfig.Builder()
                     .capacity(8)
@@ -163,9 +164,11 @@ public class Main {
                     .spawnshare(0.1)
                     .speed(1000.0)
                     .taxirate(0.0)
-                    .linefrequency(4)
+                    .linefrequency(graph.createEqualDistribution(4))
                     .turns(10000)
                     .assemble();
+            Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
+            cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
 
             LineSimulator sim = new LineSimulator(graph, cfg);
             sim.simulate();

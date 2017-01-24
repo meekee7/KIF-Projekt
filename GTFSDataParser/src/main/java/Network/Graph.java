@@ -13,9 +13,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by micha on 01.11.2016.
@@ -27,6 +29,7 @@ public class Graph {
     private Collection<IOEdge> ioedges = new HashSet<>();
     private Collection<Line> lines = new HashSet<>();
     protected String name;
+    protected Map<Edge, List<Node>> pathcache = new ConcurrentHashMap<>();
 
     @XmlAttribute
     public String getName() {
@@ -262,7 +265,7 @@ public class Graph {
     /**
      * This method uses the Dijkstra algorithm to calculate a path
      * with minimum length between two nodes.
-     * The edges are weighted with the air distance.
+     * The edges are weighted with the road distance.
      *
      * @param start The start node
      * @param end   The end node
@@ -324,7 +327,8 @@ public class Graph {
             List<Node> shortpath =
                     prev.getStops().stream()
                             .filter(x -> curr.getStops().contains(x))
-                            .map(x -> this.getShortestPathWeighted(pv, x))
+                            .map(x -> this.getPathFromCache(pv, x))
+                            //.map(x -> this.getShortestPathWeighted(pv, x))
                             .min(Comparator.comparingInt(List::size))
                             .get();
             Node intersect = shortpath.get(shortpath.size() - 1);
@@ -369,6 +373,26 @@ public class Graph {
         return path;
     }
 
+    public List<Node> getPathFromCache(Node start, Node end) {
+        List<Node> fetched = this.pathcache.get(new Edge(start, end));
+        if (fetched == null)
+            return null;
+        List<Node> copy = new ArrayList<>(fetched);
+        if (copy.get(0) == end)
+            java.util.Collections.reverse(copy);
+        return copy;
+    }
+
+    public void buildPathCache() {
+        List<Node> nodes = new ArrayList<>(this.getNodes());
+        IntStream.range(0, nodes.size()).parallel().forEach(i -> {
+            for (int j = i + 1; j < nodes.size(); j++) {
+                Node a = nodes.get(i);
+                Node b = nodes.get(j);
+                this.pathcache.put(new Edge(a, b), this.getShortestPathWeighted(a, b));
+            }
+        });
+    }
 
     protected IntSummaryStatistics getDiameterLine(Line start) {
         //THIS METHOD IS BROKEN
@@ -743,5 +767,11 @@ public class Graph {
         for (int i = 1; i < path.size(); i++)
             length += path.get(i).getDistance(path.get(i - 1));
         return length;
+    }
+
+    public Map<Integer, Integer> createEqualDistribution(int rate) {
+        Map<Integer, Integer> result = new HashMap<>();
+        this.getLines().forEach(x -> result.put(x.getId(), rate));
+        return result;
     }
 }
