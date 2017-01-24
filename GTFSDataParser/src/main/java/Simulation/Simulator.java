@@ -1,12 +1,14 @@
 package Simulation;
 
 import Network.Graph;
+import Network.Line;
 import Network.Node;
 import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
 import Simulation.Entity.Taxi;
 import Simulation.Factory.FaultFactory;
 import Simulation.Factory.PassengerFactory;
+import Simulation.LineSimulation.LineSimulator;
 import Simulation.LineSimulation.LineTaxi;
 
 import java.io.FileWriter;
@@ -70,6 +72,8 @@ public abstract class Simulator {
     public String getStats() {
         StringBuilder sb = new StringBuilder();
         String nl = System.lineSeparator();
+        sb.append("Graph " + this.graph.getName() + nl);
+        sb.append("Type " + this.getClass().getSimpleName() + nl);
         sb.append("Passengers" + nl);
         List<Passenger> delivered = this.passengers.stream().filter(Passenger::isDelivered).collect(Collectors.toList());
         sb.append("Undelivered: " + (this.passengers.size() - delivered.size()) + nl);
@@ -88,6 +92,8 @@ public abstract class Simulator {
         IntSummaryStatistics totalloadoutstats = new IntSummaryStatistics();
         this.taxis.forEach(x -> totalloadoutstats.combine(x.getLoadoutstats()));
         sb.append("LoadStats: " + totalloadoutstats + nl);
+        if (this instanceof LineSimulator)
+            System.out.println(this.taxis.stream().filter(x -> x.getLoadoutstats().getMax() == 0).map(x -> (LineTaxi) x).map(LineTaxi::getLine).map(Line::getId).distinct().collect(Collectors.toList()));
         return sb.toString();
     }
 
@@ -154,8 +160,8 @@ public abstract class Simulator {
         }
     }
 
-    public void simulate(){
-        for (int i=0; i<this.config.getTurns(); i++)
+    public void simulate() {
+        for (int i = 0; i < this.config.getTurns(); i++)
             this.getNextFrame();
     }
 

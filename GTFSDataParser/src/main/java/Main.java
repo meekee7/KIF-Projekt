@@ -150,7 +150,7 @@ public class Main {
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-//        cityfilters.put("Cottbus", CityFilter::Cottbus);
+        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
@@ -159,11 +159,11 @@ public class Main {
             //PlannedSimulator sim = new PlannedSimulator(graph);
             SimulationConfig cfg = new SimulationConfig.Builder()
                     .capacity(8)
-                    .linefrequency(4)
                     .spawnfrequency(1)
                     .spawnshare(0.1)
                     .speed(1000.0)
-                    .taxirate(0)
+                    .taxirate(0.0)
+                    .linefrequency(4)
                     .turns(10000)
                     .assemble();
 
@@ -173,6 +173,7 @@ public class Main {
             System.out.println(sim.getStats());
             sim.writeStatsToFile("./SimulationData");
             sim.denialmap.forEach((a, b) -> System.out.println(a.getId() + " " + b));
+            System.out.println("---------------------");
         });
         //graph.buildLines();
 
