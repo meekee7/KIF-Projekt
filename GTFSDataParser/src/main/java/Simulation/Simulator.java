@@ -33,6 +33,7 @@ public abstract class Simulator {
     protected double movementspeed;
     protected List<Frame> recordedFrames = new LinkedList<>();
     protected SimulationConfig config;
+    protected LongSummaryStatistics waitingstats = new LongSummaryStatistics();
 
     public Simulator(SimulationConfig config) {
         this.config = config;
@@ -61,6 +62,7 @@ public abstract class Simulator {
         this.advanceOneTurn();
         this.taxis.forEach(Taxi::incrementLoadStats);
         this.passengers.stream().filter(Passenger::needsPickup).forEach(Passenger::incwaiting);
+        this.waitingstats.accept(this.passengers.stream().filter(Passenger::needsPickup).count());
 
         if (this.turn % 1000 == 0)
             System.out.println("Calculated turn " + this.turn);
@@ -84,6 +86,7 @@ public abstract class Simulator {
         sb.append("InitPickup: " + delivered.stream().mapToInt(Passenger::getInitPickupTime).summaryStatistics() + nl);
         sb.append("TripTime: " + delivered.stream().mapToInt(Passenger::getTripTime).summaryStatistics() + nl);
         sb.append("Denied: " + delivered.stream().mapToInt(Passenger::getDenied).summaryStatistics() + nl);
+        sb.append("Waiting/Round: " + this.waitingstats);
         sb.append(nl);
         sb.append("Taxis:" + nl);
         sb.append("PassengersLoaded: " + this.taxis.stream().mapToInt(Taxi::getPassengersloaded).summaryStatistics() + nl);

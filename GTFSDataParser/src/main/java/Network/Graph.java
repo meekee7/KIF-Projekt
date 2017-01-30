@@ -394,6 +394,52 @@ public class Graph {
         });
     }
 
+    protected static List<Node> appendPath(List<Node> a, List<Node> b) {
+        if (a.get(a.size() - 1) != b.get(0))
+            throw new IllegalArgumentException("Path a does not end with first node of path b");
+
+        List<Node> newpath = new ArrayList<>(a);
+        newpath.remove(newpath.size() - 1);
+        newpath.addAll(b);
+        return newpath;
+    }
+
+    protected List<Node> integrateIntoPath(List<Node> oldpath, Node node) {
+        if (oldpath.contains(node))
+            return new ArrayList<>(oldpath);
+        if (oldpath.size() == 1)
+            return this.getPathFromCache(oldpath.get(0), node);
+        double cost = Double.POSITIVE_INFINITY;
+        int pos = 0;
+        for (int i = 0; i < oldpath.size() - 1; i++) {
+            double newcost = getPathLength(this.getPathFromCache(oldpath.get(i), node)) + getPathLength(this.getPathFromCache(node, oldpath.get(i + 1)));
+            if (newcost < cost) {
+                cost = newcost;
+                pos = i;
+            }
+        }
+        double lastcost = getPathLength(this.getPathFromCache(oldpath.get(oldpath.size() - 1), node));
+        if (lastcost < cost)
+            return appendPath(oldpath, this.getPathFromCache(oldpath.get(oldpath.size() - 1), node));
+        else {
+            List<Node> startslice = oldpath.subList(0, pos + 1);
+            List<Node> endslice = oldpath.subList(pos + 1, oldpath.size());
+            appendPath(startslice, this.getPathFromCache(oldpath.get(pos), node));
+            appendPath(startslice, this.getPathFromCache(node, oldpath.get(pos + 1)));
+            appendPath(startslice, endslice);
+            return startslice;
+        }
+    }
+
+    public List<Node> integrateIntoPath(List<Node> oldpath, Node start, Node end) {
+        List<Node> firstpath = this.integrateIntoPath(oldpath, start);
+        List<Node> startslice = firstpath.subList(0, firstpath.indexOf(start));
+        List<Node> endslice = firstpath.subList(firstpath.indexOf(start), firstpath.size());
+        endslice = this.integrateIntoPath(endslice, end);
+        startslice.addAll(endslice);
+        return startslice;
+    }
+
     protected IntSummaryStatistics getDiameterLine(Line start) {
         //THIS METHOD IS BROKEN
         Map<Line, Integer> distances = new HashMap<>();
@@ -767,6 +813,14 @@ public class Graph {
         for (int i = 1; i < path.size(); i++)
             length += path.get(i).getDistance(path.get(i - 1));
         return length;
+    }
+
+    public static void verifyPath(List<Node> path) {
+        path.stream().reduce(null, (x, y) -> {
+            if (x != null && !y.getNeighbours().contains(x))
+                throw new IllegalStateException("Previous stop not neighbour");
+            return y;
+        });
     }
 
     public Map<Integer, Integer> createEqualDistribution(int rate) {

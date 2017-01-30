@@ -7,6 +7,8 @@ import Simulation.Entity.Passenger;
 import Simulation.Factory.PassengerFactory;
 import Simulation.Simulator;
 
+import java.util.Collections;
+
 /**
  * Created by micha on 20.01.2017.
  */
@@ -22,6 +24,6 @@ public class PlannedPassengerFactory extends PassengerFactory {
 
     @Override
     public Journey createJourney(Node start, Node end) {
-        return new Journey(start, end, null);
+        return new Journey(start, end, Collections.emptyList());
     }
 }

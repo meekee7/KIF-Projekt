@@ -120,11 +120,7 @@ public class Line implements Identifiable {
     public void verify() {
         if (new HashSet<>(this.stops).size() != this.stops.size())
             throw new IllegalStateException("Duplicate stops");
-        this.stops.stream().reduce(null, (x, y) -> {
-            if (x != null && !y.getNeighbours().contains(x))
-                throw new IllegalStateException("Previous stop not neighbour");
-            return y;
-        });
+        Graph.verifyPath(this.stops);
     }
 
     public void absorbLine(Line other, Node mergenode) {

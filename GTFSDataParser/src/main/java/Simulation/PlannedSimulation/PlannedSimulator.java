@@ -9,8 +9,10 @@ import Simulation.Factory.EmptyFaultFactory;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +39,7 @@ public class PlannedSimulator extends Simulator {
 
     @Override
     protected void advanceOneTurn() {
+        this.planNextPaths();
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation)
                 .map(x -> (PlannedTaxi) x).forEach(taxi -> {
             NodeLocation loc = (NodeLocation) taxi.getLocation();
@@ -66,5 +69,19 @@ public class PlannedSimulator extends Simulator {
         });
         this.taxis.stream().filter(x -> x.getLocation() instanceof EdgeLocation).forEach(taxi ->
                 taxi.setLocation(((EdgeLocation) taxi.getLocation()).advance(this.movementspeed)));
+    }
+
+    protected void planNextPaths() {
+        Collection<Assignment> assignments = new ConcurrentLinkedQueue<>();
+        this.passengers.stream()
+                .filter(Passenger::needsPickup)
+                .map(p -> (PlannedPassenger) p)
+                .forEach(p ->
+                        this.taxis.stream()
+                                .filter(t -> !t.isFull())
+                                .map(t -> (PlannedTaxi) t)
+                                .forEach(t -> assignments.add(new Assignment(p, t, this.graph)))
+                );
+        System.out.println(assignments.size());
     }
 }
