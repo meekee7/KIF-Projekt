@@ -56,7 +56,7 @@ public class PlannedSimulator extends Simulator {
                     .map(x -> (PlannedPassenger) x)
 //                    .filter(Passenger::needsPickup)
                     .filter(taxi::isAssignedTo)
-                    .filter(x -> taxi.getFuturepath().contains(x.getEnd()))
+//                    .filter(x -> taxi.getFuturepath().contains(x.getEnd()))
                     .collect(Collectors.toList());
             while (!taxi.isFull() && !waiting.isEmpty())
                 waiting.remove(0).enterTaxi(taxi);
@@ -91,8 +91,8 @@ public class PlannedSimulator extends Simulator {
                 Instant start = Instant.now();
                 while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(20L)).isNegative()) {
                     Collection<Assignment> association = new ArrayList<>(passtoassign.size());
-                    Map<PlannedTaxi, AtomicInteger> map = new HashMap<>(freetaxis.size());
-                    freetaxis.forEach(t -> map.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
+                    Map<PlannedTaxi, AtomicInteger> restcapacity = new HashMap<>(freetaxis.size());
+                    freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
                     Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
                     Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
 
@@ -102,14 +102,13 @@ public class PlannedSimulator extends Simulator {
                         passset.remove(pass);
                         Assignment assignment = new Assignment(pass, taxi, this.graph);
                         association.add(assignment);
-                        if (map.get(taxi).decrementAndGet() == 0)
+                        if (restcapacity.get(taxi).decrementAndGet() == 0)
                             taxiset.remove(taxi);
                     }
                     allassociations.add(association);
-                    if (Assignment.totalIncCost(association) == 0.0) {
+                    if (Assignment.totalIncCost(association) == 0.0)
                         foundzerosolution.set(true);
-                        break;
-                    }
+
                 }
             }));
         }
@@ -122,6 +121,7 @@ public class PlannedSimulator extends Simulator {
             System.exit(1);
         }
         System.out.println("Turn: " + this.turn + " | " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
+
         Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
         result.forEach(x -> x.getTaxi().setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));

@@ -12,14 +12,13 @@ import java.util.List;
 public class Assignment {
     private final PlannedPassenger passenger;
     private final PlannedTaxi taxi;
-    private final List<Node> newpath;
     private double inccost;
 
     public Assignment(PlannedPassenger passenger, PlannedTaxi taxi, Graph graph) {
         this.passenger = passenger;
         this.taxi = taxi;
-        this.newpath = graph.integrateIntoPath(taxi.getFuturepath(), passenger.getStart(), passenger.getEnd());
-        this.inccost = Graph.getPathLength(this.newpath) - Graph.getPathLength(taxi.getFuturepath());
+        List<Node> newpath = graph.integrateIntoPath(taxi.getFuturepath(), passenger.getStart(), passenger.getEnd());
+        this.inccost = Graph.getPathLength(newpath) - Graph.getPathLength(taxi.getFuturepath());
     }
 
     public PlannedPassenger getPassenger() {
@@ -28,10 +27,6 @@ public class Assignment {
 
     public PlannedTaxi getTaxi() {
         return taxi;
-    }
-
-    public List<Node> getNewpath() {
-        return newpath;
     }
 
     public double getInccost() {
