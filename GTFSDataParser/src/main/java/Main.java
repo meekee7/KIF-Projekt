@@ -6,6 +6,7 @@ import Network.IO.StatJSON;
 import Network.IO.Visual.SVGBuilder;
 import Network.MaxOrigRoute.OrigGraph;
 import Network.Node;
+import Simulation.LineSimulation.LineSimulator;
 import Simulation.PlannedSimulation.PlannedSimulator;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
@@ -143,7 +144,7 @@ public class Main {
         //Main.buildAllGraphs();
         //System.exit(0);
         //Main.readAllGraphs();
-Instant start = Instant.now();
+        Instant start = Instant.now();
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
@@ -168,12 +169,15 @@ Instant start = Instant.now();
                     .linefrequency(graph.createEqualDistribution(4))
                     .turns(1000)
                     .assemble();
-//            Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
-//            System.out.println(freqdist.values());
-//            cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
+            Simulator sim;
+            if (false) {
+                Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
+                System.out.println(freqdist.values());
+                cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
+                sim = new LineSimulator(graph, cfg);
+            } else
+                sim = new PlannedSimulator(graph, cfg);
 
-            Simulator sim = new PlannedSimulator(graph, cfg);
-//            Simulator sim = new LineSimulator(graph, cfg);
             sim.simulate();
             System.out.println("---STATS---");
             System.out.println(sim.getStats());

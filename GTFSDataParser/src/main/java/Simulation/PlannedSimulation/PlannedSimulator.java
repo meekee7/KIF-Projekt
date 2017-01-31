@@ -9,6 +9,8 @@ import Simulation.Factory.EmptyFaultFactory;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,47 +83,45 @@ public class PlannedSimulator extends Simulator {
                 .map(p -> (PlannedTaxi) p)
                 .collect(Collectors.toList());
         Random random = new Random(9354084610997234L);
-        //for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
         List<Thread> threadpool = new ArrayList<>(8);
         AtomicBoolean foundzerosolution = new AtomicBoolean(false);
-        for (int i = 0; i < 50; i++) {
-            //threadpool.add(new Thread(() -> {
-            //Instant start = Instant.now();
-//            while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(200L)).isNegative()) {
-            Collection<Assignment> association = new ArrayList<>(passtoassign.size());
-            Map<PlannedTaxi, AtomicInteger> map = new HashMap<>(freetaxis.size());
-            freetaxis.forEach(t -> map.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
-            Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
-            Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
+//        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
+            threadpool.add(new Thread(() -> {
+                Instant start = Instant.now();
+                while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(20L)).isNegative()) {
+                    Collection<Assignment> association = new ArrayList<>(passtoassign.size());
+                    Map<PlannedTaxi, AtomicInteger> map = new HashMap<>(freetaxis.size());
+                    freetaxis.forEach(t -> map.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
+                    Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
+                    Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
 
-            while (!taxiset.isEmpty() && !passset.isEmpty()) {
-                PlannedTaxi taxi = taxiset.stream().skip(random.nextInt(taxiset.size())).findFirst().get();
-                PlannedPassenger pass = passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
-                passset.remove(pass);
-                Assignment assignment = new Assignment(pass, taxi, this.graph);
-                association.add(assignment);
-                if (map.get(taxi).decrementAndGet() == 0)
-                    taxiset.remove(taxi);
-            }
-            allassociations.add(association);
-            if (Assignment.totalIncCost(association) == 0.0) {
-                foundzerosolution.set(true);
-                break;
-            }
-            //}
-            //   }));
+                    while (!taxiset.isEmpty() && !passset.isEmpty()) {
+                        PlannedTaxi taxi = taxiset.stream().skip(random.nextInt(taxiset.size())).findFirst().get();
+                        PlannedPassenger pass = passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
+                        passset.remove(pass);
+                        Assignment assignment = new Assignment(pass, taxi, this.graph);
+                        association.add(assignment);
+                        if (map.get(taxi).decrementAndGet() == 0)
+                            taxiset.remove(taxi);
+                    }
+                    allassociations.add(association);
+                    if (Assignment.totalIncCost(association) == 0.0) {
+                        foundzerosolution.set(true);
+                        break;
+                    }
+                }
+            }));
         }
-        /*
         threadpool.forEach(Thread::start);
         try {
-            for (Thread thread: threadpool)
+            for (Thread thread : threadpool)
                 thread.join();
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
-        */
-        System.out.println(allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
+        System.out.println("Turn: " + this.turn + " | " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
         Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
         result.forEach(x -> x.getTaxi().setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
