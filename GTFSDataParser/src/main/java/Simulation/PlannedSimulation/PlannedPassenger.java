@@ -8,8 +8,7 @@ import Simulation.Simulator;
  * Created by micha on 20.01.2017.
  */
 public class PlannedPassenger extends Passenger {
-    protected Node start;
-    protected Node end;
+    protected boolean assigned = false;
 
     public PlannedPassenger(Simulator simulator, int id, int frame, Node start, Node end) {
         super(simulator, id, frame);
@@ -29,5 +28,18 @@ public class PlannedPassenger extends Passenger {
 
     public Node getEnd() {
         return end;
+    }
+
+    public boolean isAssigned() {
+        return assigned;
+    }
+
+    public void markAssigned(){
+        this.assigned = true;
+    }
+
+    @Override
+    public boolean needsPickup() {
+        return super.needsPickup() && !this.isAssigned();
     }
 }

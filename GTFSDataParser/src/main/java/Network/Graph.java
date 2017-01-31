@@ -424,9 +424,11 @@ public class Graph {
         else {
             List<Node> startslice = oldpath.subList(0, pos + 1);
             List<Node> endslice = oldpath.subList(pos + 1, oldpath.size());
-            appendPath(startslice, this.getPathFromCache(oldpath.get(pos), node));
-            appendPath(startslice, this.getPathFromCache(node, oldpath.get(pos + 1)));
-            appendPath(startslice, endslice);
+            List<Node> startinsert = this.getPathFromCache(oldpath.get(pos), node);
+            List<Node> middleinsert = this.getPathFromCache(node, oldpath.get(pos + 1));
+            startslice = appendPath(startslice, startinsert);
+            startslice = appendPath(startslice, middleinsert);
+            startslice = appendPath(startslice, endslice);
             return startslice;
         }
     }

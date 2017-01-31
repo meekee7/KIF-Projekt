@@ -8,6 +8,7 @@ import Network.MaxOrigRoute.OrigGraph;
 import Network.Node;
 import Simulation.PlannedSimulation.PlannedSimulator;
 import Simulation.SimulationConfig;
+import Simulation.Simulator;
 import org.onebusaway.gtfs.impl.GtfsDaoImpl;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
@@ -142,7 +143,7 @@ public class Main {
         //Main.buildAllGraphs();
         //System.exit(0);
         //Main.readAllGraphs();
-
+Instant start = Instant.now();
         Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
@@ -150,7 +151,7 @@ public class Main {
         cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
         cityfilters.put("Potsdam", CityFilter::Potsdam);
         cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-        cityfilters.put("Cottbus", CityFilter::Cottbus);
+//        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
@@ -163,15 +164,16 @@ public class Main {
                     .spawnfrequency(1)
                     .spawnshare(0.1)
                     .speed(1000.0)
-                    .taxirate(0.2)
+                    .taxirate(x.equals("SmallTest") ? 0.5 : 0.2)
                     .linefrequency(graph.createEqualDistribution(4))
-                    .turns(1)
+                    .turns(1000)
                     .assemble();
-            //Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
-            //System.out.println(freqdist.values());
-            //cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
+//            Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
+//            System.out.println(freqdist.values());
+//            cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
 
-            PlannedSimulator sim = new PlannedSimulator(graph, cfg);
+            Simulator sim = new PlannedSimulator(graph, cfg);
+//            Simulator sim = new LineSimulator(graph, cfg);
             sim.simulate();
             System.out.println("---STATS---");
             System.out.println(sim.getStats());
@@ -179,6 +181,9 @@ public class Main {
             //sim.denialmap.forEach((a, b) -> System.out.println(a.getId() + " " + b));
             System.out.println("---------------------");
         });
+        Instant end = Instant.now();
+
+        System.out.println("PROCESSING TIME: " + Duration.between(start, end));
         //graph.buildLines();
 
 //        graph.buildLines();

@@ -92,6 +92,7 @@ public abstract class Simulator {
         sb.append("PassengersLoaded: " + this.taxis.stream().mapToInt(Taxi::getPassengersloaded).summaryStatistics() + nl);
         sb.append("TotalDistance: " + this.taxis.stream().mapToDouble(Taxi::getTotaldistance).summaryStatistics() + nl);
         sb.append("NodesHit: " + this.taxis.stream().mapToInt(Taxi::getNodeshit).summaryStatistics() + nl);
+        sb.append("Standstill: " + this.taxis.stream().mapToInt(Taxi::getStandstill).summaryStatistics() + nl);
         IntSummaryStatistics totalloadoutstats = new IntSummaryStatistics();
         this.taxis.forEach(x -> totalloadoutstats.combine(x.getLoadoutstats()));
         sb.append("LoadStats: " + totalloadoutstats + nl);
@@ -114,7 +115,7 @@ public abstract class Simulator {
         }));
 
         List<String[]> taxidata = new ArrayList<>(this.taxis.size() + 1);
-        taxidata.add(new String[]{"TaxiID", "Line", "PassengersLoaded", "TotalDistance", "NodesHit", "LoadAVG", "LoadMax"});
+        taxidata.add(new String[]{"TaxiID", "Line", "PassengersLoaded", "TotalDistance", "NodesHit", "LoadAVG", "LoadMax", "Standstill"});
         this.taxis.forEach(x -> taxidata.add(new String[]{
                 Integer.toString(x.getId()),
                 x instanceof LineTaxi ? Integer.toString(((LineTaxi) x).getLine().getId()) : "-1",
@@ -122,7 +123,8 @@ public abstract class Simulator {
                 Double.toString(x.getTotaldistance()).replace('.', ','),
                 Integer.toString(x.getNodeshit()),
                 Double.toString(x.getLoadoutstats().getAverage()).replace('.', ','),
-                Integer.toString(x.getLoadoutstats().getMax())
+                Integer.toString(x.getLoadoutstats().getMax()),
+                Integer.toString(x.getStandstill())
         }));
 
         Path passpath = Paths.get(directory, this.graph.getName(), "passengers.csv");

@@ -43,6 +43,12 @@ public abstract class PassengerFactory {
             Collections.shuffle(nodes, this.random);
             Node start = nodes.get(0);
             Node end = nodes.get(1);
+//            int firstpoint = this.random.nextInt(this.graph.getNodes().size());
+//            int secondpoint = this.random.nextInt(this.graph.getNodes().size());
+//            if (firstpoint == secondpoint)
+//                secondpoint = (firstpoint + 1) % this.graph.getNodes().size();
+//            Node start = this.graph.getNodes().stream().skip(firstpoint).findFirst().get();
+//            Node end = this.graph.getNodes().stream().skip(secondpoint).findFirst().get();
             Journey journey = this.createJourney(start, end);
             journeys.add(journey);
         });

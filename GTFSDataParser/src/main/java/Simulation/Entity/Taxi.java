@@ -21,6 +21,7 @@ public class Taxi extends AbstractEntity {
     protected int nodeshit = 0;
     protected int passengersloaded = 0;
     protected double totaldistance = 0.0;
+    protected int standstill = 0;
     protected IntSummaryStatistics loadoutstats = new IntSummaryStatistics();
 
     protected Taxi(Simulator sim, int id, int capacity, List<Node> futurepath) {
@@ -120,5 +121,13 @@ public class Taxi extends AbstractEntity {
     protected void initLocation(){
         this.location = this.simulator.getLoc(this.fetchNextNode());
         this.nodeshit++;
+    }
+
+    public int getStandstill() {
+        return standstill;
+    }
+
+    protected void incStandstill(){
+        this.standstill++;
     }
 }

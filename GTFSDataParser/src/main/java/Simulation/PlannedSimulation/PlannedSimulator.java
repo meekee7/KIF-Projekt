@@ -9,10 +9,10 @@ import Simulation.Factory.EmptyFaultFactory;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +52,8 @@ public class PlannedSimulator extends Simulator {
             //Load passengers
             List<Passenger> waiting = loc.getPassengers().stream()
                     .map(x -> (PlannedPassenger) x)
-                    .filter(Passenger::needsPickup)
+//                    .filter(Passenger::needsPickup)
+                    .filter(taxi::isAssignedTo)
                     .filter(x -> taxi.getFuturepath().contains(x.getEnd()))
                     .collect(Collectors.toList());
             while (!taxi.isFull() && !waiting.isEmpty())
@@ -62,26 +63,68 @@ public class PlannedSimulator extends Simulator {
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation).forEach(taxi -> {
             Node start = ((NodeLocation) taxi.getLocation()).getNode();
             Node end = taxi.fetchNextNode();
-            if (end != null)
+            if (start != end)
                 taxi.setLocation(new EdgeLocation(this.getLoc(start), this.getLoc(end), 0.00));
-            else
-                ((PlannedTaxi) taxi).incStandstill();
         });
         this.taxis.stream().filter(x -> x.getLocation() instanceof EdgeLocation).forEach(taxi ->
                 taxi.setLocation(((EdgeLocation) taxi.getLocation()).advance(this.movementspeed)));
     }
 
     protected void planNextPaths() {
-        Collection<Assignment> assignments = new ConcurrentLinkedQueue<>();
-        this.passengers.stream()
+        Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
+        List<PlannedPassenger> passtoassign = this.passengers.stream()
                 .filter(Passenger::needsPickup)
                 .map(p -> (PlannedPassenger) p)
-                .forEach(p ->
-                        this.taxis.stream()
-                                .filter(t -> !t.isFull())
-                                .map(t -> (PlannedTaxi) t)
-                                .forEach(t -> assignments.add(new Assignment(p, t, this.graph)))
-                );
-        System.out.println(assignments.size());
+                .collect(Collectors.toList());
+        List<PlannedTaxi> freetaxis = this.taxis.stream()
+                .filter(t -> !t.isFull())
+                .map(p -> (PlannedTaxi) p)
+                .collect(Collectors.toList());
+        Random random = new Random(9354084610997234L);
+        //for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
+        List<Thread> threadpool = new ArrayList<>(8);
+        AtomicBoolean foundzerosolution = new AtomicBoolean(false);
+        for (int i = 0; i < 50; i++) {
+            //threadpool.add(new Thread(() -> {
+            //Instant start = Instant.now();
+//            while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(200L)).isNegative()) {
+            Collection<Assignment> association = new ArrayList<>(passtoassign.size());
+            Map<PlannedTaxi, AtomicInteger> map = new HashMap<>(freetaxis.size());
+            freetaxis.forEach(t -> map.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
+            Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
+            Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
+
+            while (!taxiset.isEmpty() && !passset.isEmpty()) {
+                PlannedTaxi taxi = taxiset.stream().skip(random.nextInt(taxiset.size())).findFirst().get();
+                PlannedPassenger pass = passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
+                passset.remove(pass);
+                Assignment assignment = new Assignment(pass, taxi, this.graph);
+                association.add(assignment);
+                if (map.get(taxi).decrementAndGet() == 0)
+                    taxiset.remove(taxi);
+            }
+            allassociations.add(association);
+            if (Assignment.totalIncCost(association) == 0.0) {
+                foundzerosolution.set(true);
+                break;
+            }
+            //}
+            //   }));
+        }
+        /*
+        threadpool.forEach(Thread::start);
+        try {
+            for (Thread thread: threadpool)
+                thread.join();
+        } catch (Exception e){
+            e.printStackTrace();
+            System.exit(1);
+        }
+        */
+        System.out.println(allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
+        Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
+        result.forEach(x -> x.getTaxi().setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
+        result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
+        result.forEach(x -> x.getPassenger().markAssigned());
     }
 }
