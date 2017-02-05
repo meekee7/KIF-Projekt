@@ -468,7 +468,11 @@ public class Graph {
     }
 
     public double corePathLength(List<Node> corepath) {
-        return getPathLength(corePathToPath(corepath));
+        double result = 0.0;
+        for (int i=1; i<corepath.size(); i++)
+            result += this.shortestPathLengthCached(corepath.get(i-1),corepath.get(i));
+        return result;
+        //return getPathLength(corePathToPath(corepath));
     }
 
     public List<Node> integrateIntoCorePath(List<Node> corepath, Node node) {

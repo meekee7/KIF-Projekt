@@ -168,7 +168,7 @@ public class Main {
                     .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .linefrequency(graph.createEqualDistribution(4))
                     .turns(1000)
-                    .maxcalctime(20L)
+                    .maxcalctime(50L)
                     .assemble();
             Simulator sim;
             if (false) {
@@ -182,7 +182,7 @@ public class Main {
             sim.simulate();
             System.out.println("---STATS---");
             System.out.println(sim.getStats());
-            sim.writeStatsToFile("./SimulationData");
+            sim.writeStatsToFile("./SimulationData/" + (sim instanceof LineSimulator ? "Line" : "Planned"));
             //sim.denialmap.forEach((a, b) -> System.out.println(a.getId() + " " + b));
             System.out.println("---------------------");
         });
