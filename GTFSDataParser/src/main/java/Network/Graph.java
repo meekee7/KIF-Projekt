@@ -30,7 +30,7 @@ public class Graph {
     private Collection<Line> lines = new HashSet<>();
     protected String name;
     protected Map<Edge, List<Node>> pathcache = new ConcurrentHashMap<>();
-    protected Map<Edge, Double> distcache = new ConcurrentHashMap<>();
+    protected Map<Edge, Double> distcache = new HashMap<>();
 
     @XmlAttribute
     public String getName() {
@@ -393,10 +393,11 @@ public class Graph {
                 this.pathcache.put(new Edge(a, b), this.getShortestPathWeighted(a, b));
             }
         });
-        this.pathcache.entrySet().parallelStream().forEach(x -> this.distcache.put(x.getKey(), getPathLength(x.getValue())));
+        this.pathcache = new HashMap<>(this.pathcache);
+        this.pathcache.entrySet().forEach(x -> this.distcache.put(x.getKey(), getPathLength(x.getValue())));
     }
 
-    protected double shortestPathLengthCached(Node start, Node end){
+    protected double shortestPathLengthCached(Node start, Node end) {
         return this.distcache.get(new Edge(start, end));
     }
 
@@ -418,13 +419,13 @@ public class Graph {
         double cost = Double.POSITIVE_INFINITY;
         int pos = 0;
         for (int i = 0; i < oldpath.size() - 1; i++) {
-            double newcost = getPathLength(this.getPathFromCache(oldpath.get(i), node)) + getPathLength(this.getPathFromCache(node, oldpath.get(i + 1)));
+            double newcost = this.shortestPathLengthCached(oldpath.get(i), node) + this.shortestPathLengthCached(node, oldpath.get(i + 1));
             if (newcost < cost) {
                 cost = newcost;
                 pos = i;
             }
         }
-        double lastcost = getPathLength(this.getPathFromCache(oldpath.get(oldpath.size() - 1), node));
+        double lastcost = this.shortestPathLengthCached(oldpath.get(oldpath.size() - 1), node);
         if (lastcost < cost)
             return appendPath(oldpath, this.getPathFromCache(oldpath.get(oldpath.size() - 1), node));
         else {
@@ -449,15 +450,24 @@ public class Graph {
     }
 
     public List<Node> corePathToPath(List<Node> corepath) {
-        List<Node> result = new LinkedList<>();
-        result.add(corepath.get(0));
+        //List<Node> result = new LinkedList<>();
+        //result.add(corepath.get(0));
+        //for (int i = 1; i < corepath.size(); i++)
+        //    result = appendPath(result, this.getPathFromCache(corepath.get(i - 1), corepath.get(i)));
+        List<List<Node>> paths = new ArrayList<>(corepath.size());
         for (int i = 1; i < corepath.size(); i++)
-            result = appendPath(result, this.getPathFromCache(corepath.get(i - 1), corepath.get(i)));
+            paths.add(this.getPathFromCache(corepath.get(i - 1), corepath.get(i)));
+        List<Node> result = new ArrayList<>(paths.stream().mapToInt(List::size).sum());
+        paths.forEach(p -> {
+            result.addAll(p);
+            result.remove(result.size() - 1);
+        });
+        result.add(corepath.get(corepath.size() - 1));
         verifyPath(result);
         return result;
     }
 
-    public double corePathLength(List<Node> corepath){
+    public double corePathLength(List<Node> corepath) {
         return getPathLength(corePathToPath(corepath));
     }
 
