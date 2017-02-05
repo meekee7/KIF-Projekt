@@ -1,6 +1,8 @@
 package Simulation.PlannedSimulation;
 
 import Network.Node;
+import Simulation.Entity.EdgeLocation;
+import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
 import Simulation.Entity.Taxi;
 import Simulation.Simulator;
@@ -12,6 +14,7 @@ import java.util.*;
  */
 public class PlannedTaxi extends Taxi {
     protected Set<Passenger> assigned = new HashSet<>();
+    protected List<Node> corepath = new LinkedList<>();
 
     public PlannedTaxi(Simulator sim, int id, int capacity, List<Node> futurepath) {
         super(sim, id, capacity, new LinkedList<>(futurepath));
@@ -24,12 +27,18 @@ public class PlannedTaxi extends Taxi {
 
     @Override
     public Node fetchNextNode() {
-        Node node = super.fetchNextNode();
-        if (this.futurepath.isEmpty()) {
+        if (this.location == null)
+            return this.futurepath.remove(0);
+        NodeLocation loc = (NodeLocation) this.getLocation();
+        Node curnode = loc.getNode();
+        if (!this.corepath.isEmpty() && this.corepath.get(0) == curnode)
+            this.corepath.remove(0);
+        if (this.corepath.isEmpty()) {
             this.incStandstill();
-            this.futurepath = new ArrayList<>(Arrays.asList(node));
+            return curnode;
         }
-        return node;
+        Node nexttarget = this.corepath.get(0);
+        return this.simulator.getGraph().getPathFromCache(curnode, nexttarget).get(1);
     }
 
     @Override
@@ -38,11 +47,31 @@ public class PlannedTaxi extends Taxi {
         this.assigned.remove(passenger);
     }
 
-    public boolean isAssignedTo(Passenger passenger){
+    public boolean isAssignedTo(Passenger passenger) {
         return this.assigned.contains(passenger);
     }
 
     public void addToAssigned(Passenger passenger) {
         this.assigned.add(passenger);
+    }
+
+    public Set<Passenger> getAssigned() {
+        return assigned;
+    }
+
+    public List<Node> getCorepath() {
+        List<Node> copy = new ArrayList<>(this.corepath);
+        Node currnode;
+        if (this.location instanceof NodeLocation)
+            currnode = ((NodeLocation) this.location).getNode();
+        else
+            currnode = ((EdgeLocation) this.location).getEnd().getNode();
+        if (copy.isEmpty() || currnode != copy.get(0))
+            copy.add(0, currnode);
+        return copy;
+    }
+
+    public void setCorepath(List<Node> corepath) {
+        this.corepath = corepath;
     }
 }

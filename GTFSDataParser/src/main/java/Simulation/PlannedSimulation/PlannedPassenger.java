@@ -14,6 +14,7 @@ public class PlannedPassenger extends Passenger {
         super(simulator, id, frame);
         this.start = start;
         this.end = end;
+        this.directdist = this.getStart().getDistance(this.getEnd());
     }
 
     public PlannedPassenger(PlannedPassenger passenger) {

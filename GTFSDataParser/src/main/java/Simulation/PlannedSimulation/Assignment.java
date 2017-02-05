@@ -13,12 +13,14 @@ public class Assignment {
     private final PlannedPassenger passenger;
     private final PlannedTaxi taxi;
     private double inccost;
+    private List<Node> newpath;
 
-    public Assignment(PlannedPassenger passenger, PlannedTaxi taxi, Graph graph) {
+
+    public Assignment(PlannedPassenger passenger, PlannedTaxi taxi, List<Node> oldpath, Graph graph) {
         this.passenger = passenger;
         this.taxi = taxi;
-        List<Node> newpath = graph.integrateIntoPath(taxi.getFuturepath(), passenger.getStart(), passenger.getEnd());
-        this.inccost = Graph.getPathLength(newpath) - Graph.getPathLength(taxi.getFuturepath());
+        this.newpath = graph.integrateIntoPath(oldpath, passenger.getStart(), passenger.getEnd());
+        this.inccost = graph.corePathLength(this.newpath) - graph.corePathLength(oldpath);
     }
 
     public PlannedPassenger getPassenger() {
@@ -27,6 +29,10 @@ public class Assignment {
 
     public PlannedTaxi getTaxi() {
         return taxi;
+    }
+
+    public List<Node> getNewpath() {
+        return newpath;
     }
 
     public double getInccost() {

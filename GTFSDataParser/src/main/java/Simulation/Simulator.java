@@ -10,6 +10,9 @@ import Simulation.Factory.FaultFactory;
 import Simulation.Factory.PassengerFactory;
 import Simulation.LineSimulation.LineSimulator;
 import Simulation.LineSimulation.LineTaxi;
+import Simulation.PlannedSimulation.PlannedPassenger;
+import Simulation.PlannedSimulation.PlannedSimulator;
+import Simulation.PlannedSimulation.PlannedTaxi;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -76,23 +79,38 @@ public abstract class Simulator {
         String nl = System.lineSeparator();
         sb.append("Graph " + this.graph.getName() + nl);
         sb.append("Type " + this.getClass().getSimpleName() + nl);
-        sb.append("Passengers" + nl);
         List<Passenger> delivered = this.passengers.stream().filter(Passenger::isDelivered).collect(Collectors.toList());
+        List<Passenger> undelivered = new LinkedList<>(this.passengers);
+        undelivered.removeAll(delivered);
+
+        sb.append("Passengers" + nl);
+        sb.append("Total: " + this.passengers.size() + nl);
         sb.append("Undelivered: " + (this.passengers.size() - delivered.size()) + nl);
         sb.append("Superstarved: " + this.passengers.stream().filter(x -> x.getCreatedAt() < 100 && !x.isDelivered()).count() + nl);
+        sb.append("-UNDELIVERED-" + nl);
+        sb.append("Waiting: " + undelivered.stream().mapToInt(Passenger::getWaitingTime).summaryStatistics() + nl);
+        sb.append("On road: " + taxis.stream().mapToInt(x->x.getPassengers().size()).sum() + nl);
+
+        if (this instanceof PlannedSimulator)
+            sb.append("Unassigned " + undelivered.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count() + nl);
+        sb.append("-DELIVERED-" + nl);
         sb.append("Happiness: " + delivered.stream().mapToDouble(Passenger::getHappinessIndex).summaryStatistics() + nl);
         sb.append("Waiting: " + delivered.stream().mapToInt(Passenger::getWaitingTime).summaryStatistics() + nl);
         sb.append("Switches: " + delivered.stream().mapToInt(Passenger::getSwitches).summaryStatistics() + nl);
         sb.append("InitPickup: " + delivered.stream().mapToInt(Passenger::getInitPickupTime).summaryStatistics() + nl);
         sb.append("TripTime: " + delivered.stream().mapToInt(Passenger::getTripTime).summaryStatistics() + nl);
         sb.append("Denied: " + delivered.stream().mapToInt(Passenger::getDenied).summaryStatistics() + nl);
-        sb.append("Waiting/Round: " + this.waitingstats);
+        sb.append("Waiting/Round: " + this.waitingstats + nl);
         sb.append(nl);
-        sb.append("Taxis:" + nl);
+        sb.append(nl);
+        sb.append("TAXIS:" + nl);
         sb.append("PassengersLoaded: " + this.taxis.stream().mapToInt(Taxi::getPassengersloaded).summaryStatistics() + nl);
         sb.append("TotalDistance: " + this.taxis.stream().mapToDouble(Taxi::getTotaldistance).summaryStatistics() + nl);
         sb.append("NodesHit: " + this.taxis.stream().mapToInt(Taxi::getNodeshit).summaryStatistics() + nl);
         sb.append("Standstill: " + this.taxis.stream().mapToInt(Taxi::getStandstill).summaryStatistics() + nl);
+        sb.append("Remaining Futurepath: " + this.taxis.stream().mapToInt(x -> x.getFuturepath().size()).summaryStatistics() + nl);
+        if (this instanceof PlannedSimulator)
+            sb.append("Assigned: " + this.taxis.stream().map(x->(PlannedTaxi) x).mapToInt(x->x.getAssigned().size()).summaryStatistics() + nl);
         IntSummaryStatistics totalloadoutstats = new IntSummaryStatistics();
         this.taxis.forEach(x -> totalloadoutstats.combine(x.getLoadoutstats()));
         sb.append("LoadStats: " + totalloadoutstats + nl);
@@ -180,5 +198,9 @@ public abstract class Simulator {
 
     public SimulationConfig getConfig() {
         return config;
+    }
+
+    public Graph getGraph() {
+        return graph;
     }
 }

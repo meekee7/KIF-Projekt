@@ -6,10 +6,7 @@ import Simulation.Entity.Taxi;
 import Simulation.Factory.TaxiFactory;
 import Simulation.Simulator;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 
@@ -36,11 +33,11 @@ public class PlannedTaxiFactory extends TaxiFactory {
             return Collections.emptyList();
         if (number == 1)
             return Collections.singletonList(this.createTaxiAt(nodes.stream().findAny().get()));
-
         ToDoubleFunction<Node> getdim = northsouth ? Node::getLat : Node::getLon;
-        double center = nodes.stream().mapToDouble(getdim).average().getAsDouble();
-        Collection<Taxi> left = this.distributeAcrossNodes(nodes.stream().filter(x -> getdim.applyAsDouble(x) <= center).collect(Collectors.toList()), !northsouth, number / 2 + number % 2);
-        Collection<Taxi> right = this.distributeAcrossNodes(nodes.stream().filter(x -> getdim.applyAsDouble(x) > center).collect(Collectors.toList()), !northsouth, number / 2);
+//        double center = nodes.stream().mapToDouble(getdim).average().getAsDouble();
+        List<Node> sorted = nodes.stream().sorted(Comparator.comparingDouble(getdim)).collect(Collectors.toList());
+        Collection<Taxi> left = this.distributeAcrossNodes(sorted.subList(0, sorted.size() / 2), !northsouth, number / 2 + number % 2);
+        Collection<Taxi> right = this.distributeAcrossNodes(sorted.subList(sorted.size() / 2, sorted.size()), !northsouth, number / 2);
 
         ArrayList<Taxi> result = new ArrayList<>(number);
         result.addAll(left);

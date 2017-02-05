@@ -108,4 +108,12 @@ public class Passenger extends AbstractEntity {
     public void incDenied(){
         this.denied++;
     }
+
+    public Node getStart() {
+        return start;
+    }
+
+    public Node getEnd() {
+        return end;
+    }
 }

@@ -30,6 +30,7 @@ public class Graph {
     private Collection<Line> lines = new HashSet<>();
     protected String name;
     protected Map<Edge, List<Node>> pathcache = new ConcurrentHashMap<>();
+    protected Map<Edge, Double> distcache = new ConcurrentHashMap<>();
 
     @XmlAttribute
     public String getName() {
@@ -392,6 +393,7 @@ public class Graph {
                 this.pathcache.put(new Edge(a, b), this.getShortestPathWeighted(a, b));
             }
         });
+        this.pathcache.entrySet().parallelStream().forEach(x -> this.distcache.put(x.getKey(), getPathLength(x.getValue())));
     }
 
     protected static List<Node> appendPath(List<Node> a, List<Node> b) {
@@ -438,6 +440,59 @@ public class Graph {
         List<Node> startslice = firstpath.subList(0, firstpath.indexOf(start));
         List<Node> endslice = firstpath.subList(firstpath.indexOf(start), firstpath.size());
         endslice = this.integrateIntoPath(endslice, end);
+        startslice.addAll(endslice);
+        return startslice;
+    }
+
+    public List<Node> corePathToPath(List<Node> corepath) {
+        List<Node> result = new LinkedList<>();
+        result.add(corepath.get(0));
+        for (int i = 1; i < result.size(); i++)
+            result = appendPath(result, this.getPathFromCache(corepath.get(i - 1), corepath.get(i)));
+        verifyPath(result);
+        return result;
+    }
+
+    public double corePathLength(List<Node> corepath){
+        return getPathLength(corePathToPath(corepath));
+    }
+
+    public List<Node> integrateIntoCorePath(List<Node> corepath, Node node) {
+        if (corepath.contains(node))
+            return corepath;
+        if (corepath.size() == 1)
+            return Arrays.asList(corepath.get(0), node);
+
+        double cost = Double.POSITIVE_INFINITY;
+        int pos = 0;
+        for (int i = 0; i < corepath.size() - 1; i++) {
+            double newcost = getPathLength(this.getPathFromCache(corepath.get(i), node)) + getPathLength(this.getPathFromCache(node, corepath.get(i + 1)));
+            if (newcost < cost) {
+                cost = newcost;
+                pos = i;
+            }
+        }
+        double lastcost = getPathLength(this.getPathFromCache(corepath.get(corepath.size() - 1), node));
+        if (lastcost < cost) {
+            List<Node> copy = new ArrayList<>(corepath);
+            copy.add(node);
+            return copy;
+        } else {
+            List<Node> startslice = corepath.subList(0, pos + 1);
+            List<Node> endslice = corepath.subList(pos + 1, corepath.size());
+            List<Node> result = new ArrayList<>(startslice.size() + 1 + endslice.size());
+            result.addAll(startslice);
+            result.add(node);
+            result.addAll(endslice);
+            return result;
+        }
+    }
+
+    public List<Node> integrateIntoCorePath(List<Node> corepath, Node start, Node end) {
+        List<Node> firstpath = this.integrateIntoCorePath(corepath, start);
+        List<Node> startslice = firstpath.subList(0, firstpath.indexOf(start));
+        List<Node> endslice = firstpath.subList(firstpath.indexOf(start), firstpath.size());
+        endslice = this.integrateIntoCorePath(endslice, end);
         startslice.addAll(endslice);
         return startslice;
     }

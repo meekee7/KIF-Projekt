@@ -3,7 +3,6 @@ package Simulation.LineSimulation;
 import Network.Journey;
 import Network.Line;
 import Network.Node;
-import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
 import Simulation.Simulator;
 
@@ -24,7 +23,7 @@ public class LinePassenger extends Passenger {
         this.start = journey.getStart();
         this.end = journey.getEnd();
         this.currstep = this.journey.getSteps().poll();
-        this.simulator.getLoc(this.start).getPassengers().add(this);
+//        this.simulator.getLoc(this.start).getPassengers().add(this);
         this.directdist = this.journey.getStart().getDistance(this.journey.getEnd());
     }
 
