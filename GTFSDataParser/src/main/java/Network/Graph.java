@@ -396,6 +396,10 @@ public class Graph {
         this.pathcache.entrySet().parallelStream().forEach(x -> this.distcache.put(x.getKey(), getPathLength(x.getValue())));
     }
 
+    protected double shortestPathLengthCached(Node start, Node end){
+        return this.distcache.get(new Edge(start, end));
+    }
+
     protected static List<Node> appendPath(List<Node> a, List<Node> b) {
         if (a.get(a.size() - 1) != b.get(0))
             throw new IllegalArgumentException("Path a does not end with first node of path b");
@@ -447,7 +451,7 @@ public class Graph {
     public List<Node> corePathToPath(List<Node> corepath) {
         List<Node> result = new LinkedList<>();
         result.add(corepath.get(0));
-        for (int i = 1; i < result.size(); i++)
+        for (int i = 1; i < corepath.size(); i++)
             result = appendPath(result, this.getPathFromCache(corepath.get(i - 1), corepath.get(i)));
         verifyPath(result);
         return result;
@@ -490,7 +494,7 @@ public class Graph {
 
     public List<Node> integrateIntoCorePath(List<Node> corepath, Node start, Node end) {
         List<Node> firstpath = this.integrateIntoCorePath(corepath, start);
-        List<Node> startslice = firstpath.subList(0, firstpath.indexOf(start));
+        List<Node> startslice = new ArrayList<>(firstpath.subList(0, firstpath.indexOf(start)));
         List<Node> endslice = firstpath.subList(firstpath.indexOf(start), firstpath.size());
         endslice = this.integrateIntoCorePath(endslice, end);
         startslice.addAll(endslice);

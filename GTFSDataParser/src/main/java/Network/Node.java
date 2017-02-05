@@ -3,9 +3,9 @@ package Network;
 import Network.Utils.Identifiable;
 
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 import java.awt.geom.Point2D;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -18,6 +18,7 @@ public class Node implements Identifiable {
     protected double lon;
     protected Set<Node> neighbours = new HashSet<>();
     protected Set<Line> lines = new HashSet<>();
+    protected Map<Node, Double> distcache = new ConcurrentHashMap<>();
 
     public Node() {
     }
@@ -94,6 +95,8 @@ public class Node implements Identifiable {
     }
 
     public double getDistance(Node other){
+        if (this.distcache.containsKey(other))
+            return this.distcache.get(other);
         //http://www.movable-type.co.uk/scripts/latlong.html
         double R = 6371e3; // metres
         double φ1 = Math.toRadians(this.getLat());
@@ -107,6 +110,7 @@ public class Node implements Identifiable {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
         double d = R * c;
+        this.distcache.put(other,d);
         return d;
         //return this.getPoint().distance(other.getPoint());
     }

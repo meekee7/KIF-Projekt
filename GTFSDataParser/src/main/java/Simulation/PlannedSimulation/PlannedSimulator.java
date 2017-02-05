@@ -96,12 +96,13 @@ public class PlannedSimulator extends Simulator {
         for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
             threadpool.add(new Thread(() -> {
                 Instant start = Instant.now();
-                while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(this.config.getMaxcalctime())).isNegative()) {
+                long calctime = this.config.getMaxcalctime();
+                while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(calctime)).isNegative()) {
                     Collection<Assignment> association = new ArrayList<>(passtoassign.size());
                     Map<PlannedTaxi, AtomicInteger> restcapacity = new HashMap<>(freetaxis.size());
                     Map<PlannedTaxi, List<Node>> newpath = new HashMap<>(freetaxis.size());
-                    freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(1)));
-                    //freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
+//                    freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(1)));
+                    freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
                     freetaxis.forEach(t -> newpath.put(t, t.getCorepath()));
                     Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
                     Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
@@ -139,7 +140,8 @@ public class PlannedSimulator extends Simulator {
                 + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
 
         Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
-        result.forEach(x -> x.getTaxi().setCorepath(x.getNewpath()));// setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
+//        result.forEach(x -> x.getTaxi().setCorepath(x.getNewpath()));// setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
+        result.forEach(x -> x.getTaxi().setCorepath(this.getGraph().integrateIntoCorePath(x.getTaxi().getCorepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
         result.forEach(x -> x.getPassenger().markAssigned());
       /*
