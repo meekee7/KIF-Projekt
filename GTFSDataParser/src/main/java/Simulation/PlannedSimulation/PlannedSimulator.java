@@ -145,7 +145,7 @@ public class PlannedSimulator extends Simulator {
         }
 
 
-        Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(x->Assignment.totalIncCost(x)/this.taxis.size())).get();
+        Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
         result.forEach(x -> x.getTaxi().setCorepath(this.getGraph().integrateIntoCorePath(x.getTaxi().getCorepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
         result.forEach(x -> x.getPassenger().markAssigned());
