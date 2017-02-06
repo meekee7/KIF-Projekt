@@ -77,7 +77,7 @@ public class PlannedSimulator extends Simulator {
 
         Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
 
-        if (this.turn % 50 == 0) {
+        if (this.turn % 20 == 0) {
             this.taxis.stream().map(x -> (PlannedTaxi) x).forEach(PlannedTaxi::streamlineAssignments);
             this.passengers.stream().filter(Passenger::needsPickup).map(x -> (PlannedPassenger) x).forEach(PlannedPassenger::markUnassigned);
         }

@@ -167,12 +167,12 @@ public class Main {
                     .speed(1000.0)
                     .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .linefrequency(graph.createEqualDistribution(4))
-                    .turns(10000)
+                    .turns(1000)
                     .maxcalctime(1000L)
 		    .calcstep(1)
                     .assemble();
             Simulator sim;
-            if (true) {
+            if (false) {
                 Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
                 System.out.println(freqdist.values());
                 cfg = new SimulationConfig.Builder(cfg).turns(1000).linefrequency(freqdist).assemble();
