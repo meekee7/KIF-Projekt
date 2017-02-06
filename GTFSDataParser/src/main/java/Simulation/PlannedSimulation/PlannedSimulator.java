@@ -76,9 +76,16 @@ public class PlannedSimulator extends Simulator {
     protected void planNextPaths() {
 
         Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
+
+        if (this.turn % 50 == 0) {
+            this.taxis.stream().map(x -> (PlannedTaxi) x).forEach(PlannedTaxi::streamlineAssignments);
+            this.passengers.stream().filter(Passenger::needsPickup).map(x -> (PlannedPassenger) x).forEach(PlannedPassenger::markUnassigned);
+        }
+
         List<PlannedPassenger> passtoassign = this.passengers.stream()
                 .filter(Passenger::needsPickup)
                 .map(p -> (PlannedPassenger) p)
+                .filter(p -> !p.isAssigned())
                 .collect(Collectors.toList());
         List<PlannedTaxi> freetaxis = this.taxis.stream()
                 .filter(t -> !t.isFull())
@@ -89,7 +96,6 @@ public class PlannedSimulator extends Simulator {
 //        passtoassign.forEach(p ->
 //                freetaxis.forEach(t ->
 //                        allassignments.add(new Assignment(p, t, this.graph))));
-
 
         Random random = new Random(9354084610997234L);
         List<Thread> threadpool = new ArrayList<>(8);
@@ -118,7 +124,7 @@ public class PlannedSimulator extends Simulator {
                         Assignment assignment = new Assignment(pass, taxi, newpath.get(taxi), this.graph);
                         association.add(assignment);
                         newpath.put(taxi, assignment.getNewpath());
-			assignment.delPath();
+                        assignment.delPath();
                         if (restcapacity.get(taxi).decrementAndGet() == 0)
                             taxiset.remove(taxi);
                     }
@@ -140,27 +146,14 @@ public class PlannedSimulator extends Simulator {
 
 
         Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
-//        result.forEach(x -> x.getTaxi().setCorepath(x.getNewpath()));// setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
         result.forEach(x -> x.getTaxi().setCorepath(this.getGraph().integrateIntoCorePath(x.getTaxi().getCorepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
         result.forEach(x -> x.getPassenger().markAssigned());
-      /*
-        this.taxis.stream().map(t -> (PlannedTaxi) t).forEach(t -> {
-            Set<Node> corenodes = new HashSet<>();
-            t.getAssigned().forEach(p -> corenodes.add(p.getStart()));
-            t.getAssigned().forEach(p -> corenodes.add(p.getEnd()));
-            t.getPassengers().forEach(p -> corenodes.add(p.getStart()));
-            t.getPassengers().forEach(p -> corenodes.add(p.getEnd()));
-            t.setCorepath(t.getFuturepath().stream().filter(corenodes::contains).collect(Collectors.toList()));
-            if (t.getCorepath().get(0) != t.getFuturepath().get(0))
-                t.getCorepath().add(0, t.getFuturepath().get(0));
-        });
-        */
 
         System.out.println("Turn: " + this.turn + " | "
 //                + "Allassignments: " + allassignments.size() + " | "
                         + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics()
-                        + " | Unassigned " + this.passengers.stream().map(x->(PlannedPassenger)x).filter(x->!x.isAssigned()).count()
+                        + " | Unassigned " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
         );
     }
 }

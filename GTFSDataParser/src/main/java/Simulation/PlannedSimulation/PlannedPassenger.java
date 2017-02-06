@@ -39,6 +39,8 @@ public class PlannedPassenger extends Passenger {
         this.assigned = true;
     }
 
+    public void markUnassigned(){this.assigned = false;}
+
     /*
     @Override
     public boolean needsPickup() {

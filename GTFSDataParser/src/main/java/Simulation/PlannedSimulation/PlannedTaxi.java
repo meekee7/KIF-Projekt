@@ -8,6 +8,7 @@ import Simulation.Entity.Taxi;
 import Simulation.Simulator;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by micha on 20.01.2017.
@@ -73,5 +74,11 @@ public class PlannedTaxi extends Taxi {
 
     public void setCorepath(List<Node> corepath) {
         this.corepath = corepath;
+    }
+
+    public void streamlineAssignments(){
+        Set<Node> relevantnodes = this.passengers.stream().map(Passenger::getEnd).collect(Collectors.toSet());
+        this.corepath = this.corepath.stream().filter(relevantnodes::contains).distinct().collect(Collectors.toList());
+        this.getAssigned().clear();
     }
 }
