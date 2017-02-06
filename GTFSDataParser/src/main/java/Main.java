@@ -149,10 +149,10 @@ public class Main {
         //This could be done with reflection
 
         //cityfilters.put("VBB", CityFilter::VBB);
-//        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
-//        cityfilters.put("Potsdam", CityFilter::Potsdam);
-//        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-//        cityfilters.put("Cottbus", CityFilter::Cottbus);
+        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
+        cityfilters.put("Potsdam", CityFilter::Potsdam);
+        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
+        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
@@ -167,14 +167,15 @@ public class Main {
                     .speed(1000.0)
                     .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .linefrequency(graph.createEqualDistribution(4))
-                    .turns(1000)
-                    .maxcalctime(50L)
+                    .turns(10000)
+                    .maxcalctime(1000L)
+		    .calcstep(1)
                     .assemble();
             Simulator sim;
-            if (false) {
-//                Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
-//                System.out.println(freqdist.values());
-//                cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
+            if (true) {
+                Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
+                System.out.println(freqdist.values());
+                cfg = new SimulationConfig.Builder(cfg).turns(1000).linefrequency(freqdist).assemble();
                 sim = new LineSimulator(graph, cfg);
             } else
                 sim = new PlannedSimulator(graph, cfg);
