@@ -166,14 +166,14 @@ public class Main {
                     .spawnshare(0.1)
                     .speed(1000.0)
 
-                    .turns(1000)
+                    .turns(100)
 
                     .linefrequency(graph.createEqualDistribution(4))
 
                     .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .maxcalctime(1000L)
                     .calcstep(1)
-                    .clearing(20)
+                    .clearing(200000)
 
                     .assemble();
             Simulator sim;
