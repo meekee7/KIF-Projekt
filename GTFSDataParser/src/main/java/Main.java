@@ -165,11 +165,16 @@ public class Main {
                     .spawnfrequency(1)
                     .spawnshare(0.1)
                     .speed(1000.0)
-                    .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
+
+                    .turns(1000)
+
                     .linefrequency(graph.createEqualDistribution(4))
-                    .turns(10000)
+
+                    .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .maxcalctime(1000L)
-		    .calcstep(1)
+                    .calcstep(1)
+                    .clearing(20)
+
                     .assemble();
             Simulator sim;
             if (true) {
