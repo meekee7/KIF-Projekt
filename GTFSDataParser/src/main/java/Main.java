@@ -168,7 +168,8 @@ public class Main {
                     .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
                     .linefrequency(graph.createEqualDistribution(4))
                     .turns(1000)
-                    .maxcalctime(50L)
+                    .maxcalctime(100L)
+                    .calcstep(1)
                     .assemble();
             Simulator sim;
             if (false) {
