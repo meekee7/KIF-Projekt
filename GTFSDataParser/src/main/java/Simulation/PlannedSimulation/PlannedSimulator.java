@@ -105,12 +105,12 @@ public class PlannedSimulator extends Simulator {
                     freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(this.config.getCapacity() - t.getPassengersloaded())));
                     freetaxis.forEach(t -> newpath.put(t, t.getCorepath()));
                     Set<PlannedTaxi> taxiset = new HashSet<>(freetaxis);
-                    Set<PlannedPassenger> passset = new HashSet<>(passtoassign);
+                    List<PlannedPassenger> passset = new LinkedList<>(passtoassign);
 
                     while (!taxiset.isEmpty() && !passset.isEmpty()) {
                         PlannedTaxi taxi = taxiset.stream().skip(random.nextInt(taxiset.size())).findFirst().get();
-                        PlannedPassenger pass = passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
-                        passset.remove(pass);
+                        PlannedPassenger pass = passset.remove(0); //passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
+                        //passset.remove(pass);
 //                        Assignment assignment = allassignments.stream()
 //                                .filter(asgnmnt -> asgnmnt.getPassenger() == pass && asgnmnt.getTaxi() == taxi)
 //                                .findFirst().get();

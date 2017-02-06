@@ -63,6 +63,11 @@ public class SimulationConfig {
             this.config.maxcalctime = time;
             return this;
         }
+
+        public Builder calcstep(int step){
+            this.config.calcstep = step;
+            return this;
+        }
     }
 
     private double speed = 1000; //1000
@@ -72,7 +77,8 @@ public class SimulationConfig {
     private Map<Integer,Integer> linefrequency = new HashMap<>(); //4
     private double taxirate = 0.05; //?
     private int turns = 10000; //10000
-    private long maxcalctime;
+    private long maxcalctime = 100L;
+    private int calcstep = 5;
 
     public SimulationConfig() {
     }
@@ -115,5 +121,10 @@ public class SimulationConfig {
     @XmlElement
     public long getMaxcalctime() {
         return maxcalctime;
+    }
+
+    @XmlElement
+    public int getCalcstep() {
+        return calcstep;
     }
 }

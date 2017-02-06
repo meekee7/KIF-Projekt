@@ -19,7 +19,7 @@ public class Assignment {
     public Assignment(PlannedPassenger passenger, PlannedTaxi taxi, List<Node> oldpath, Graph graph) {
         this.passenger = passenger;
         this.taxi = taxi;
-        this.newpath = graph.integrateIntoPath(oldpath, passenger.getStart(), passenger.getEnd());
+        this.newpath = graph.integrateIntoCorePath(oldpath, passenger.getStart(), passenger.getEnd());
         this.inccost = graph.corePathLength(this.newpath) - graph.corePathLength(oldpath);
     }
 

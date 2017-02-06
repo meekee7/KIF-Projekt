@@ -413,7 +413,7 @@ public class Graph {
 
     protected List<Node> integrateIntoPath(List<Node> oldpath, Node node) {
         if (oldpath.contains(node))
-            return new ArrayList<>(oldpath);
+            return oldpath;// new ArrayList<>(oldpath);
         if (oldpath.size() == 1)
             return this.getPathFromCache(oldpath.get(0), node);
         double cost = Double.POSITIVE_INFINITY;
