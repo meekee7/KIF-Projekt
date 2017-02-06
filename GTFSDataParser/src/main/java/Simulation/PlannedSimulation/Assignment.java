@@ -39,6 +39,10 @@ public class Assignment {
         return inccost;
     }
 
+    public void delPath(){
+	this.newpath = null;
+    }
+
     public static double totalIncCost(Collection<Assignment> assignments) {
         return assignments.stream().mapToDouble(Assignment::getInccost).sum();
     }

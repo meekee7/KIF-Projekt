@@ -118,6 +118,7 @@ public class PlannedSimulator extends Simulator {
                         Assignment assignment = new Assignment(pass, taxi, newpath.get(taxi), this.graph);
                         association.add(assignment);
                         newpath.put(taxi, assignment.getNewpath());
+			assignment.delPath();
                         if (restcapacity.get(taxi).decrementAndGet() == 0)
                             taxiset.remove(taxi);
                     }
