@@ -41,7 +41,7 @@ public class PlannedSimulator extends Simulator {
 
     @Override
     protected void advanceOneTurn() {
-        this.planNextPaths();
+	this.planNextPaths();
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation)
                 .map(x -> (PlannedTaxi) x).forEach(taxi -> {
             NodeLocation loc = (NodeLocation) taxi.getLocation();
