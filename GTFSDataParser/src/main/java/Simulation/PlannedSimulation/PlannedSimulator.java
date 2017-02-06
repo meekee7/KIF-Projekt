@@ -41,7 +41,8 @@ public class PlannedSimulator extends Simulator {
 
     @Override
     protected void advanceOneTurn() {
-	this.planNextPaths();
+        if (this.turn % this.config.getCalcstep() == 0)
+            this.planNextPaths();
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation)
                 .map(x -> (PlannedTaxi) x).forEach(taxi -> {
             NodeLocation loc = (NodeLocation) taxi.getLocation();
@@ -135,9 +136,7 @@ public class PlannedSimulator extends Simulator {
             e.printStackTrace();
             System.exit(1);
         }
-        System.out.println("Turn: " + this.turn + " | "
-//                + "Allassignments: " + allassignments.size() + " | "
-                + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics());
+
 
         Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
 //        result.forEach(x -> x.getTaxi().setCorepath(x.getNewpath()));// setFuturepath(this.graph.integrateIntoPath(x.getTaxi().getFuturepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));// x.getNewpath()));
@@ -156,5 +155,11 @@ public class PlannedSimulator extends Simulator {
                 t.getCorepath().add(0, t.getFuturepath().get(0));
         });
         */
+
+        System.out.println("Turn: " + this.turn + " | "
+//                + "Allassignments: " + allassignments.size() + " | "
+                        + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics()
+                        + " | Unassigned " + this.passengers.stream().map(x->(PlannedPassenger)x).filter(x->!x.isAssigned()).count()
+        );
     }
 }
