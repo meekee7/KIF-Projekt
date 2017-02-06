@@ -68,6 +68,11 @@ public class SimulationConfig {
             this.config.calcstep = step;
             return this;
         }
+
+        public Builder clearing(int clearing){
+            this.config.clearing = clearing;
+            return this;
+        }
     }
 
     private double speed = 1000; //1000
@@ -79,6 +84,7 @@ public class SimulationConfig {
     private int turns = 10000; //10000
     private long maxcalctime = 100L;
     private int calcstep = 5;
+    private int clearing = 20;
 
     public SimulationConfig() {
     }
@@ -126,5 +132,10 @@ public class SimulationConfig {
     @XmlElement
     public int getCalcstep() {
         return calcstep;
+    }
+
+    @XmlElement
+    public int getClearing() {
+        return clearing;
     }
 }

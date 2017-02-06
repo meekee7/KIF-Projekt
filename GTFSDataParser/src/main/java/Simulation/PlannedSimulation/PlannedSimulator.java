@@ -77,7 +77,7 @@ public class PlannedSimulator extends Simulator {
 
         Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
 
-        if (this.turn % 20 == 0) {
+        if (this.turn % this.config.getClearing() == 0) {
             this.taxis.stream().map(x -> (PlannedTaxi) x).forEach(PlannedTaxi::streamlineAssignments);
             this.passengers.stream().filter(Passenger::needsPickup).map(x -> (PlannedPassenger) x).forEach(PlannedPassenger::markUnassigned);
         }
@@ -152,8 +152,9 @@ public class PlannedSimulator extends Simulator {
 
         System.out.println("Turn: " + this.turn + " | "
 //                + "Allassignments: " + allassignments.size() + " | "
-                        + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics()
-                        + " | Unassigned " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
+                        + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
+                        + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
+                        + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
         );
     }
 }
