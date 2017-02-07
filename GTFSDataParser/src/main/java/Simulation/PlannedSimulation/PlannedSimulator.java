@@ -90,8 +90,8 @@ public class PlannedSimulator extends Simulator {
         List<PlannedTaxi> freetaxis = this.taxis.stream()
                 .filter(t -> !t.isFull())
                 .map(p -> (PlannedTaxi) p)
+		.filter(t-> t.getAssigned().size() < this.config.getCapacity())
                 .collect(Collectors.toList());
-
 //        Collection<Assignment> allassignments = new ArrayList<>(passtoassign.size() * freetaxis.size());
 //        passtoassign.forEach(p ->
 //                freetaxis.forEach(t ->
@@ -155,6 +155,7 @@ public class PlannedSimulator extends Simulator {
                         + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
                         + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
                         + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
+			+ " | Locs " + this.taxis.stream().map(x -> (PlannedTaxi) x).filter(x->x.corepath.size() == 0).map(PlannedTaxi::getLocation).map(x->x.getClass().getSimpleName()).collect(Collectors.toList())
         );
     }
 }
