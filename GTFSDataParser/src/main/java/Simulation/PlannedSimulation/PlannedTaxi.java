@@ -35,8 +35,17 @@ public class PlannedTaxi extends Taxi {
         if (!this.corepath.isEmpty() && this.corepath.get(0) == curnode)
             this.corepath.remove(0);
         if (this.corepath.isEmpty()) {
-            this.incStandstill();
-            return curnode;
+            if (!this.passengers.isEmpty() || !this.assigned.isEmpty()) {
+                System.out.println("WARNING: APPLYING REPAIR ON TAXI " + this.getId());
+                Set<Node> corenodes = new HashSet<>();
+                this.passengers.forEach(p->corenodes.add(p.getEnd()));
+                this.assigned.forEach(p->corenodes.add(p.getStart()));
+                this.assigned.forEach(p->corenodes.add(p.getEnd()));
+                this.corepath = new ArrayList<>(corenodes);
+            } else {
+                this.incStandstill();
+                return curnode;
+            }
         }
         Node nexttarget = this.corepath.get(0);
         return this.simulator.getGraph().getPathFromCache(curnode, nexttarget).get(1);
@@ -73,6 +82,8 @@ public class PlannedTaxi extends Taxi {
     }
 
     public void setCorepath(List<Node> corepath) {
+        if (corepath.size() < this.corepath.size())
+            System.out.println("WARNING: getting assigned less nodes than we had on taxi " + this.getId());
         this.corepath = corepath;
     }
 

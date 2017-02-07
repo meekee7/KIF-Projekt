@@ -36,13 +36,22 @@ public abstract class PassengerFactory {
         int count = (int) Math.max(this.graph.getNodes().size() * this.simulator.getConfig().getSpawnshare(), 1);
 
         Collection<Passenger> newpass = new ArrayList<>();
+        List<Node> nodes = new ArrayList<>(this.graph.getNodes());
+        Collections.shuffle(nodes,this.random);
 
         Collection<Journey> journeys = new ConcurrentLinkedQueue<>();
         IntStream.range(0, count).parallel().forEach(x -> {
-            List<Node> nodes = new ArrayList<>(this.graph.getNodes());
-            Collections.shuffle(nodes, this.random);
-            Node start = nodes.get(0);
-            Node end = nodes.get(1);
+            //List<Node> nodes = new ArrayList<>(this.graph.getNodes());
+            //Collections.shuffle(nodes, this.random);
+            int first = 0;
+            int second = 0;
+            do {
+                first = this.random.nextInt(nodes.size());
+                second = this.random.nextInt(nodes.size());
+            } while (first == second);
+
+            Node start = nodes.get(first);
+            Node end = nodes.get(second);
 //            int firstpoint = this.random.nextInt(this.graph.getNodes().size());
 //            int secondpoint = this.random.nextInt(this.graph.getNodes().size());
 //            if (firstpoint == secondpoint)

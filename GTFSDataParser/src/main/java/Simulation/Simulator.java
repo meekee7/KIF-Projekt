@@ -65,7 +65,7 @@ public abstract class Simulator {
         this.advanceOneTurn();
         this.taxis.forEach(Taxi::incrementLoadStats);
         this.passengers.stream().filter(Passenger::needsPickup).forEach(Passenger::incwaiting);
-        this.waitingstats.accept(this.passengers.stream().filter(Passenger::needsPickup).count());
+        this.waitingstats.accept(this.passengers.parallelStream().filter(Passenger::needsPickup).count());
 
         if (this.turn % 1000 == 0)
             System.out.println("Calculated turn " + this.turn);

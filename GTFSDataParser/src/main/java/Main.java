@@ -180,7 +180,7 @@ public class Main {
             if (false) {
                 Map<Integer, Integer> freqdist = LineSimulator.findBestDistribution(graph, cfg);
                 System.out.println(freqdist.values());
-                cfg = new SimulationConfig.Builder(cfg).turns(1000).linefrequency(freqdist).assemble();
+                cfg = new SimulationConfig.Builder(cfg).linefrequency(freqdist).assemble();
                 sim = new LineSimulator(graph, cfg);
             } else
                 sim = new PlannedSimulator(graph, cfg);
