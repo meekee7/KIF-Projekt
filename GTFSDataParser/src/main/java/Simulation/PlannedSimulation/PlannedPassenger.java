@@ -1,6 +1,7 @@
 package Simulation.PlannedSimulation;
 
 import Network.Node;
+import Opta.OptaPassenger;
 import Simulation.Entity.Passenger;
 import Simulation.Simulator;
 
@@ -40,6 +41,10 @@ public class PlannedPassenger extends Passenger {
     }
 
     public void markUnassigned(){this.assigned = false;}
+
+    public OptaPassenger toOpta(){
+        return new OptaPassenger(this.getStart(), this.getEnd(), this.id);
+    }
 
     /*
     @Override
