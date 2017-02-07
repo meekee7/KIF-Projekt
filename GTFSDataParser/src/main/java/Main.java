@@ -149,10 +149,10 @@ public class Main {
         //This could be done with reflection
 
         //cityfilters.put("VBB", CityFilter::VBB);
-//        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
-//        cityfilters.put("Potsdam", CityFilter::Potsdam);
-//        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-//        cityfilters.put("Cottbus", CityFilter::Cottbus);
+        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
+        cityfilters.put("Potsdam", CityFilter::Potsdam);
+        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
+        cityfilters.put("Cottbus", CityFilter::Cottbus);
         cityfilters.put("Brandenburg", CityFilter::Brandenburg);
         //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
         //cityfilters.put("BerlinFull", CityFilter::BerlinFull);

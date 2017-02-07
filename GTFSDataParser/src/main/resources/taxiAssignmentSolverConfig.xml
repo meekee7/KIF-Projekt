@@ -22,7 +22,9 @@
 
     <!-- Optimization algorithms configuration -->
     <termination>
-        <millisecondsSpentLimit>1000</millisecondsSpentLimit>
+        <millisecondsSpentLimit>500</millisecondsSpentLimit>
+	<!--<unimprovedMillisecondsSpentLimit>500</unimprovedMillisecondsSpentLimit>-->
+	<!--<bestScoreLimit>0hard/0soft</bestScoreLimit>-->
         <!--<secondsSpentLimit>1</secondsSpentLimit>-->
     </termination>
     <!-- Power tweaked optimization algorithms configuration -->

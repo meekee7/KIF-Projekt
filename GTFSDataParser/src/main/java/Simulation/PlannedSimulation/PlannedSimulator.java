@@ -105,7 +105,7 @@ public class PlannedSimulator extends Simulator {
         this.passengers.stream().map(x->(PlannedPassenger) x).forEach(x->passmap.put(x.getId(), x));
 
 
-        solution.getPassengerList().forEach(op -> {
+        solution.getPassengerList().stream().filter(x->x.getTaxi() != null).forEach(op -> {
             PlannedPassenger p = passmap.get(op.getId());
             p.markAssigned();
             PlannedTaxi taxi = taximap.get((int)op.getTaxi().getId());
