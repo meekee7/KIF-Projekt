@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class PlannedTaxi extends Taxi {
     protected Set<Passenger> assigned = new HashSet<>();
     protected List<Node> corepath = new LinkedList<>();
-    protected List<List<Node>> corepathhist = new ArrayList<>(10000);
+//    protected List<List<Node>> corepathhist = new ArrayList<>(10000);
 
     public PlannedTaxi(Simulator sim, int id, int capacity, List<Node> futurepath) {
         super(sim, id, capacity, new LinkedList<>(futurepath));
@@ -34,8 +34,8 @@ public class PlannedTaxi extends Taxi {
             return this.futurepath.remove(0);
         NodeLocation loc = (NodeLocation) this.getLocation();
         Node curnode = loc.getNode();
-        List<Node> prevcorepath = new ArrayList<>(this.corepath);
-        this.corepathhist.add(prevcorepath);
+//        List<Node> prevcorepath = new ArrayList<>(this.corepath);
+//        this.corepathhist.add(prevcorepath);
         if (!this.corepath.isEmpty() && this.corepath.get(0) == curnode)
             this.corepath.remove(0);
         if (this.corepath.isEmpty()) {
