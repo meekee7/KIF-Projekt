@@ -90,6 +90,7 @@ public class PlannedSimulator extends Simulator {
         List<PlannedTaxi> freetaxis = this.taxis.stream()
                 .filter(t -> !t.isFull())
                 .map(p -> (PlannedTaxi) p)
+                .filter(p -> p.getAssigned().size() < this.config.getCapacity())
                 .collect(Collectors.toList());
 
 //        Collection<Assignment> allassignments = new ArrayList<>(passtoassign.size() * freetaxis.size());
@@ -150,10 +151,16 @@ public class PlannedSimulator extends Simulator {
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
         result.forEach(x -> x.getPassenger().markAssigned());
 
-        System.out.println("Turn: " + this.turn 
+        if (this.turn > 100) {
+            List<PlannedTaxi> stopped = this.taxis.stream().map(x -> (PlannedTaxi) x).filter(x -> x.corepath.size() == 0).collect(Collectors.toList());
+            if (!stopped.isEmpty())
+                System.out.println("HERE");
+        }
+
+        System.out.println("Turn: " + this.turn
 //                + "Allassignments: " + allassignments.size() + " | "
                         + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
-                        + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
+                        // + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
                         + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
         );
     }
