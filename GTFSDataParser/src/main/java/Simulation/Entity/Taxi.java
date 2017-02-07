@@ -130,4 +130,8 @@ public class Taxi extends AbstractEntity {
     protected void incStandstill(){
         this.standstill++;
     }
+
+    public int getCapacity() {
+        return capacity;
+    }
 }

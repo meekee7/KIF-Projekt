@@ -116,4 +116,8 @@ public class Passenger extends AbstractEntity {
     public Node getEnd() {
         return end;
     }
+
+    public Taxi getTaxi() {
+        return taxi;
+    }
 }
