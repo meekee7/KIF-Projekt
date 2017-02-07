@@ -166,7 +166,7 @@ public class Main {
                     .spawnshare(0.1)
                     .speed(1000.0)
 
-                    .turns(10)
+                    .turns(1000)
 
                     .linefrequency(graph.createEqualDistribution(4))
 
