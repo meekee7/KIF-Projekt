@@ -3,9 +3,6 @@ package Opta;
 import org.optaplanner.core.api.solver.Solver;
 import org.optaplanner.core.api.solver.SolverFactory;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 /**
  * Created by Sabine on 07.02.2017.
  */
@@ -13,7 +10,7 @@ public class TaxiAssignmentHelloWorld {
     public static void main(String[] args) {
         // Build the Solver
         String solverconfig =
-                "Opta/taxiAssignmentSolverConfig.xml";
+                "taxiAssignmentSolverConfig.xml";
         SolverFactory<Assignment> solverFactory = SolverFactory.createFromXmlResource(
                 solverconfig);
 

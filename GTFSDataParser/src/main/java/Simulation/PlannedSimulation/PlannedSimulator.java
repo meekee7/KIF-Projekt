@@ -2,8 +2,6 @@ package Simulation.PlannedSimulation;
 
 import Network.Graph;
 import Network.Node;
-import Opta.*;
-import Opta.Assignment;
 import Simulation.Entity.EdgeLocation;
 import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
@@ -13,12 +11,10 @@ import Simulation.Simulator;
 import org.optaplanner.core.api.solver.Solver;
 import org.optaplanner.core.api.solver.SolverFactory;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -41,7 +37,7 @@ public class PlannedSimulator extends Simulator {
             this.passengers.addAll(this.passengerFactory.createNewPassengers(0));
 
         String solverconfig =
-                "Opta/taxiAssignmentSolverConfig.xml";
+                "taxiAssignmentSolverConfig.xml";
         this.solverFactory = SolverFactory.createFromXmlResource(
                 solverconfig);
 
