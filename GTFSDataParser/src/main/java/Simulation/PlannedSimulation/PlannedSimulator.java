@@ -41,6 +41,9 @@ public class PlannedSimulator extends Simulator {
         this.solverFactory = SolverFactory.createFromXmlResource(
                 solverconfig);
 
+
+
+
         System.out.println("Taxis: " + this.taxis.size());
         System.out.println("Passengers: " + this.passengers.size());
         System.out.println("Init complete");
@@ -99,16 +102,15 @@ public class PlannedSimulator extends Simulator {
         Opta.Assignment solution = solver.solve(assignment);
 
         Map<Integer, PlannedTaxi> taximap = new HashMap<>();
-        this.taxis.stream().map(x->(PlannedTaxi) x).forEach(x->taximap.put(x.getId(), x));
+        this.taxis.stream().map(x -> (PlannedTaxi) x).forEach(x -> taximap.put(x.getId(), x));
 
         Map<Integer, PlannedPassenger> passmap = new HashMap<>();
-        this.passengers.stream().map(x->(PlannedPassenger) x).forEach(x->passmap.put(x.getId(), x));
+        this.passengers.stream().map(x -> (PlannedPassenger) x).forEach(x -> passmap.put(x.getId(), x));
 
-
-        solution.getPassengerList().forEach(op -> {
+        solution.getPassengerList().stream().filter(x -> x.getTaxi() != null).forEach(op -> {
             PlannedPassenger p = passmap.get(op.getId());
             p.markAssigned();
-            PlannedTaxi taxi = taximap.get((int)op.getTaxi().getId());
+            PlannedTaxi taxi = taximap.get((int) op.getTaxi().getId());
             taxi.addToAssigned(p);
             taxi.setCorepath(this.graph.integrateIntoCorePath(taxi.getCorepath(), p.getStart(), p.getEnd()));
         });

@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class PlannedTaxi extends Taxi {
     protected Set<Passenger> assigned = new HashSet<>();
     protected List<Node> corepath = new LinkedList<>();
+    protected List<List<Node>> corepathhist = new ArrayList<>(10000);
 
     public PlannedTaxi(Simulator sim, int id, int capacity, List<Node> futurepath) {
         super(sim, id, capacity, new LinkedList<>(futurepath));
@@ -33,16 +34,17 @@ public class PlannedTaxi extends Taxi {
             return this.futurepath.remove(0);
         NodeLocation loc = (NodeLocation) this.getLocation();
         Node curnode = loc.getNode();
+        List<Node> prevcorepath = new ArrayList<>(this.corepath);
+        this.corepathhist.add(prevcorepath);
         if (!this.corepath.isEmpty() && this.corepath.get(0) == curnode)
             this.corepath.remove(0);
         if (this.corepath.isEmpty()) {
             if (!this.passengers.isEmpty() || !this.assigned.isEmpty()) {
                 System.out.println("WARNING: APPLYING REPAIR ON TAXI " + this.getId());
-                Set<Node> corenodes = new HashSet<>();
-                this.passengers.forEach(p->corenodes.add(p.getEnd()));
-                this.assigned.forEach(p->corenodes.add(p.getStart()));
-                this.assigned.forEach(p->corenodes.add(p.getEnd()));
-                this.corepath = new ArrayList<>(corenodes);
+                this.corepath = new ArrayList<>();
+                this.passengers.forEach(p -> this.corepath.add(p.getEnd()));
+                this.assigned.forEach(p -> this.corepath.add(p.getStart()));
+                this.assigned.forEach(p -> this.corepath.add(p.getEnd()));
             } else {
                 this.incStandstill();
                 return curnode;
@@ -88,13 +90,13 @@ public class PlannedTaxi extends Taxi {
         this.corepath = corepath;
     }
 
-    public void streamlineAssignments(){
+    public void streamlineAssignments() {
         Set<Node> relevantnodes = this.passengers.stream().map(Passenger::getEnd).collect(Collectors.toSet());
         this.corepath = this.corepath.stream().filter(relevantnodes::contains).distinct().collect(Collectors.toList());
         this.getAssigned().clear();
     }
 
-    public OptaTaxi toOpta(){
+    public OptaTaxi toOpta() {
         return new OptaTaxi(this.capacity - this.passengers.size(), this.id, this.simulator.getGraph(), this.getCorepath());
     }
 }
