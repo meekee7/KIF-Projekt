@@ -41,14 +41,14 @@ public class PlannedTaxi extends Taxi {
         if (this.corepath.isEmpty()) {
             if (!this.passengers.isEmpty() || !this.assigned.isEmpty()) {
                 System.out.println("WARNING: APPLYING REPAIR ON TAXI " + this.getId());
-                this.corepath = new ArrayList<>();
-                this.passengers.forEach(p -> this.corepath.add(p.getEnd()));
-                this.assigned.forEach(p -> this.corepath.add(p.getStart()));
-                this.assigned.forEach(p -> this.corepath.add(p.getEnd()));
-            } else {
-                this.incStandstill();
+                this.corepath.add(curnode);
+                this.passengers.forEach(p -> this.corepath = this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getEnd()));
+                this.assigned.forEach(p -> this.corepath = this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getStart(), p.getEnd()));
                 return curnode;
-            }
+            } //else {
+            this.incStandstill();
+            return curnode;
+            //}
         }
         Node nexttarget = this.corepath.get(0);
         return this.simulator.getGraph().getPathFromCache(curnode, nexttarget).get(1);
