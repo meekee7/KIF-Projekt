@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <solver>
     <!--<environmentMode>FAST_ASSERT</environmentMode>-->
-
+    <!--TODO copy this to the classpath or adjust build system-->
     <!-- Domain model configuration -->
     <scanAnnotatedClasses>
-        <packageInclude>org.optaplanner.examples.TaxiAssignment</packageInclude>
+        <packageInclude>Opta</packageInclude>
     </scanAnnotatedClasses>
 
     <!-- Score configuration -->
     <scoreDirectorFactory>
         <scoreDefinitionType>HARD_SOFT</scoreDefinitionType>
-        <easyScoreCalculatorClass>org.optaplanner.examples.TaxiAssignment.EasyScoreCalculator</easyScoreCalculatorClass>
+        <easyScoreCalculatorClass>Opta.EasyScoreCalculator</easyScoreCalculatorClass>
         <!--<easyScoreCalculatorClass>org.optaplanner.examples.cloudbalancing.solver.score.CloudBalancingMapBasedEasyScoreCalculator</easyScoreCalculatorClass>-->
         <!-- <incrementalScoreCalculatorClass>org.optaplanner.examples.cloudbalancing.solver.score.CloudBalancingIncrementalScoreCalculator</incrementalScoreCalculatorClass> -->
         <!--<scoreDrl>org/optaplanner/examples/cloudbalancing/solver/cloudBalancingScoreRules.drl</scoreDrl> -->

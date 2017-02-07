@@ -2,12 +2,16 @@ package Simulation.PlannedSimulation;
 
 import Network.Graph;
 import Network.Node;
+import Opta.*;
+import Opta.Assignment;
 import Simulation.Entity.EdgeLocation;
 import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
 import Simulation.Factory.EmptyFaultFactory;
 import Simulation.SimulationConfig;
 import Simulation.Simulator;
+import org.optaplanner.core.api.solver.Solver;
+import org.optaplanner.core.api.solver.SolverFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,6 +25,8 @@ import java.util.stream.Collectors;
  * Created by micha on 20.01.2017.
  */
 public class PlannedSimulator extends Simulator {
+    SolverFactory<Opta.Assignment> solverFactory = null;
+
     public PlannedSimulator(Graph graph, SimulationConfig config) {
         super(config);
         this.graph = graph;
@@ -33,6 +39,11 @@ public class PlannedSimulator extends Simulator {
 
         for (int i = 0; i < 5; i++)
             this.passengers.addAll(this.passengerFactory.createNewPassengers(0));
+
+        String solverconfig =
+                "Opta/taxiAssignmentSolverConfig.xml";
+        this.solverFactory = SolverFactory.createFromXmlResource(
+                solverconfig);
 
         System.out.println("Taxis: " + this.taxis.size());
         System.out.println("Passengers: " + this.passengers.size());
@@ -73,6 +84,48 @@ public class PlannedSimulator extends Simulator {
                 taxi.setLocation(((EdgeLocation) taxi.getLocation()).advance(this.movementspeed)));
     }
 
+    protected void planNextPaths() {
+        Solver<Opta.Assignment> solver = this.solverFactory.buildSolver();
+        Opta.Assignment assignment = new Opta.Assignment();
+        assignment.setId(0L);
+        assignment.setPassengerList(this.passengers.stream()
+                .map(x -> (PlannedPassenger) x)
+                .filter(Passenger::needsPickup)
+                .filter(x -> !x.isAssigned())
+                .map(PlannedPassenger::toOpta)
+                .collect(Collectors.toList())
+        );
+        assignment.setTaxiList(this.taxis.stream()
+                .map(x -> (PlannedTaxi) x)
+                .filter(x -> !x.isFull())
+                .map(PlannedTaxi::toOpta).collect(Collectors.toList())
+        );
+        Opta.Assignment solution = solver.solve(assignment);
+
+        Map<Integer, PlannedTaxi> taximap = new HashMap<>();
+        this.taxis.stream().map(x->(PlannedTaxi) x).forEach(x->taximap.put(x.getId(), x));
+
+        Map<Integer, PlannedPassenger> passmap = new HashMap<>();
+        this.passengers.stream().map(x->(PlannedPassenger) x).forEach(x->passmap.put(x.getId(), x));
+
+
+        solution.getPassengerList().forEach(op -> {
+            PlannedPassenger p = passmap.get(op.getId());
+            p.markAssigned();
+            PlannedTaxi taxi = taximap.get((int)op.getTaxi().getId());
+            taxi.addToAssigned(p);
+            taxi.setCorepath(this.graph.integrateIntoCorePath(taxi.getCorepath(), p.getStart(), p.getEnd()));
+        });
+
+        System.out.println("Turn: " + this.turn
+//                + "Allassignments: " + allassignments.size() + " | "
+//                        + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
+                        // + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
+                        + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
+        );
+    }
+
+    /*
     protected void planNextPaths() {
 
         Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
@@ -164,4 +217,5 @@ public class PlannedSimulator extends Simulator {
                         + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
         );
     }
+    */
 }

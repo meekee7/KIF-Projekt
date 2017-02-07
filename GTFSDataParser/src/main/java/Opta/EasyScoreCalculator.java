@@ -1,6 +1,9 @@
 package Opta;
 
+import Network.Node;
 import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
+
+import java.util.List;
 
 /**
  * Created by Sabine on 07.02.2017.
@@ -16,7 +19,7 @@ public class EasyScoreCalculator implements org.optaplanner.core.impl.score.dire
         int softScore = 0;
         for (OptaTaxi taxi : assignment.getTaxiList()) {
             int peopleInTaxi = 0;
-            int travelledDistance = 0;
+            double travelledDistance = 0.0;
             boolean used = false;
 
             // Calculate usage
@@ -25,7 +28,9 @@ public class EasyScoreCalculator implements org.optaplanner.core.impl.score.dire
                     peopleInTaxi++;
 
                     //method for path construction goes here.
-                    travelledDistance =+ passenger.getDistance();
+                    List<Node> newcorepath = taxi.getGraph().integrateIntoCorePath(taxi.getCorepath(), passenger.getStart(), passenger.getEnd());
+                    double cplength = taxi.getGraph().corePathLength(newcorepath);
+                    travelledDistance =+ cplength;
                     used = true;
                 }
             }

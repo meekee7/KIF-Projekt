@@ -1,6 +1,7 @@
 package Simulation.PlannedSimulation;
 
 import Network.Node;
+import Opta.OptaTaxi;
 import Simulation.Entity.EdgeLocation;
 import Simulation.Entity.NodeLocation;
 import Simulation.Entity.Passenger;
@@ -91,5 +92,9 @@ public class PlannedTaxi extends Taxi {
         Set<Node> relevantnodes = this.passengers.stream().map(Passenger::getEnd).collect(Collectors.toSet());
         this.corepath = this.corepath.stream().filter(relevantnodes::contains).distinct().collect(Collectors.toList());
         this.getAssigned().clear();
+    }
+
+    public OptaTaxi toOpta(){
+        return new OptaTaxi(this.capacity - this.passengers.size(), this.id, this.simulator.getGraph(), this.getCorepath());
     }
 }
