@@ -55,14 +55,15 @@ public class PlannedSimulator extends Simulator {
     protected void advanceOneTurn() {
         if (this.turn % this.config.getCalcstep() == 0)
             this.planNextPathsOpta();
+
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation)
                 .map(x -> (PlannedTaxi) x).forEach(taxi -> {
-            NodeLocation loc = (NodeLocation) taxi.getLocation();
-            //Unload passengers
-            List<Passenger> toleave = taxi.getPassengers().stream().map(x -> (PlannedPassenger) x)
-                    .filter(x -> x.getEnd() == loc.getNode())
-                    .collect(Collectors.toList());
-            toleave.forEach(Passenger::leaveTaxi);
+                    NodeLocation loc = (NodeLocation) taxi.getLocation();
+                    //Unload passengers
+                    List<Passenger> toleave = taxi.getPassengers().stream().map(x -> (PlannedPassenger) x)
+                            .filter(x -> x.getEnd() == loc.getNode())
+                            .collect(Collectors.toList());
+                    toleave.forEach(Passenger::leaveTaxi);
 
             //Load passengers
             List<Passenger> waiting = loc.getPassengers().stream()

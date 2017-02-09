@@ -478,6 +478,8 @@ public class Graph {
     public List<Node> integrateIntoCorePath(List<Node> corepath, Node node) {
         if (corepath.contains(node))
             return corepath;
+        if (corepath.size() == 0)
+            return Arrays.asList(node);
         if (corepath.size() == 1)
             return Arrays.asList(corepath.get(0), node);
 
