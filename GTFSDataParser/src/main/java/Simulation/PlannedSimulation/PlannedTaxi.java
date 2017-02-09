@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  */
 public class PlannedTaxi extends Taxi {
     protected Set<Passenger> assigned = new HashSet<>();
-    protected List<Node> corepath = new LinkedList<>();
+    protected final List<Node> corepath = new LinkedList<>();
 //    protected List<List<Node>> corepathhist = new ArrayList<>(10000);
 
     public PlannedTaxi(Simulator sim, int id, int capacity, List<Node> futurepath) {
@@ -42,8 +42,8 @@ public class PlannedTaxi extends Taxi {
             if (!this.passengers.isEmpty() || !this.assigned.isEmpty()) {
                 System.out.println("WARNING: APPLYING REPAIR ON TAXI " + this.getId());
                 this.corepath.add(curnode);
-                this.passengers.forEach(p -> this.corepath = this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getEnd()));
-                this.assigned.forEach(p -> this.corepath = this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getStart(), p.getEnd()));
+                this.passengers.forEach(p -> this.setCorepath(this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getEnd())));
+                this.assigned.forEach(p -> this.setCorepath(this.simulator.getGraph().integrateIntoCorePath(this.corepath, p.getStart(), p.getEnd())));
                 return curnode;
             } //else {
             this.incStandstill();
@@ -87,12 +87,14 @@ public class PlannedTaxi extends Taxi {
     public void setCorepath(List<Node> corepath) {
         if (corepath.size() < this.corepath.size())
             System.out.println("WARNING: getting assigned less nodes than we had on taxi " + this.getId());
-        this.corepath = corepath;
+        this.corepath.clear();
+        this.corepath.addAll(corepath);
+//        this.corepath = corepath;
     }
 
     public void streamlineAssignments() {
         Set<Node> relevantnodes = this.passengers.stream().map(Passenger::getEnd).collect(Collectors.toSet());
-        this.corepath = this.corepath.stream().filter(relevantnodes::contains).distinct().collect(Collectors.toList());
+        this.setCorepath(this.corepath.stream().filter(relevantnodes::contains).distinct().collect(Collectors.toList()));
         this.getAssigned().clear();
     }
 
