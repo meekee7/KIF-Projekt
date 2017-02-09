@@ -17,7 +17,7 @@ import java.util.List;
  * Created by Sabine on 07.02.2017.
  */
 @PlanningSolution
-@XStreamAlias("Assignment")
+@XStreamAlias("PlannedAssignment")
 public class Assignment extends AbstractPersistable implements Solution<HardSoftScore>{
 
     private List<OptaPassenger> passengerList = new LinkedList<>();

@@ -47,6 +47,11 @@ public class PlannedTaxiFactory extends TaxiFactory {
 
     @Override
     public Collection<Taxi> createTaxis() {
-        return new HashSet<>(this.distributeAcrossNodes(this.graph.getNodes(), true, (int) Math.max(this.graph.getNodes().size() * this.simulator.getConfig().getTaxirate(), 1)));
+        int numtaxis = 0;
+        if (this.simulator.getConfig().getTaxinum() == 0)
+            numtaxis = (int) Math.max(this.graph.getNodes().size() * this.simulator.getConfig().getTaxirate(), 1);
+        else
+            numtaxis = this.simulator.getConfig().getTaxinum();
+        return new HashSet<>(this.distributeAcrossNodes(this.graph.getNodes(), true, numtaxis));
     }
 }

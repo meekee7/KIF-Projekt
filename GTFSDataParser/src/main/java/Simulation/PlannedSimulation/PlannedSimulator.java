@@ -11,10 +11,12 @@ import Simulation.Simulator;
 import org.optaplanner.core.api.solver.Solver;
 import org.optaplanner.core.api.solver.SolverFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +54,7 @@ public class PlannedSimulator extends Simulator {
     @Override
     protected void advanceOneTurn() {
         if (this.turn % this.config.getCalcstep() == 0)
-            this.planNextPaths();
+            this.planNextPathsOpta();
         this.taxis.stream().filter(x -> x.getLocation() instanceof NodeLocation)
                 .map(x -> (PlannedTaxi) x).forEach(taxi -> {
             NodeLocation loc = (NodeLocation) taxi.getLocation();
@@ -83,7 +85,7 @@ public class PlannedSimulator extends Simulator {
                 taxi.setLocation(((EdgeLocation) taxi.getLocation()).advance(this.movementspeed)));
     }
 
-    protected void planNextPaths() {
+    protected void planNextPathsOpta() {
         Solver<Opta.Assignment> solver = this.solverFactory.buildSolver();
         Opta.Assignment assignment = new Opta.Assignment();
         assignment.setId(0L);
@@ -117,16 +119,16 @@ public class PlannedSimulator extends Simulator {
 
         System.out.println("Turn: " + this.turn
 //                + "Allassignments: " + allassignments.size() + " | "
-//                        + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
+//                        + " | Asgn " + allassociations.stream().mapToDouble(PlannedAssignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
                         // + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
                         + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
         );
     }
 
-    /*
-    protected void planNextPaths() {
 
-        Collection<Collection<Assignment>> allassociations = new ConcurrentLinkedQueue<>();
+    protected void planNextPathsBrute() {
+
+        Collection<Collection<PlannedAssignment>> allassociations = new ConcurrentLinkedQueue<>();
 
         if (this.turn % this.config.getClearing() == 0) {
             this.taxis.stream().map(x -> (PlannedTaxi) x).forEach(PlannedTaxi::streamlineAssignments);
@@ -143,10 +145,10 @@ public class PlannedSimulator extends Simulator {
                 .map(p -> (PlannedTaxi) p)
 		.filter(t-> t.getAssigned().size() < this.config.getCapacity())
                 .collect(Collectors.toList());
-//        Collection<Assignment> allassignments = new ArrayList<>(passtoassign.size() * freetaxis.size());
+//        Collection<PlannedAssignment> allassignments = new ArrayList<>(passtoassign.size() * freetaxis.size());
 //        passtoassign.forEach(p ->
 //                freetaxis.forEach(t ->
-//                        allassignments.add(new Assignment(p, t, this.graph))));
+//                        allassignments.add(new PlannedAssignment(p, t, this.graph))));
 
         Random random = new Random(9354084610997234L);
         List<Thread> threadpool = new ArrayList<>(8);
@@ -156,7 +158,7 @@ public class PlannedSimulator extends Simulator {
                 Instant start = Instant.now();
                 long calctime = this.config.getMaxcalctime();
                 while (!foundzerosolution.get() && Duration.between(start, Instant.now()).minus(Duration.ofMillis(calctime)).isNegative()) {
-                    Collection<Assignment> association = new ArrayList<>(passtoassign.size());
+                    Collection<PlannedAssignment> association = new ArrayList<>(passtoassign.size());
                     Map<PlannedTaxi, AtomicInteger> restcapacity = new HashMap<>(freetaxis.size());
                     Map<PlannedTaxi, List<Node>> newpath = new HashMap<>(freetaxis.size());
 //                    freetaxis.forEach(t -> restcapacity.put(t, new AtomicInteger(1)));
@@ -169,10 +171,10 @@ public class PlannedSimulator extends Simulator {
                         PlannedTaxi taxi = taxiset.stream().skip(random.nextInt(taxiset.size())).findFirst().get();
                         PlannedPassenger pass = passset.remove(0); //passset.stream().skip(random.nextInt(passset.size())).findFirst().get();
                         //passset.remove(pass);
-//                        Assignment assignment = allassignments.stream()
+//                        PlannedAssignment assignment = allassignments.stream()
 //                                .filter(asgnmnt -> asgnmnt.getPassenger() == pass && asgnmnt.getTaxi() == taxi)
 //                                .findFirst().get();
-                        Assignment assignment = new Assignment(pass, taxi, newpath.get(taxi), this.graph);
+                        PlannedAssignment assignment = new PlannedAssignment(pass, taxi, newpath.get(taxi), this.graph);
                         association.add(assignment);
                         newpath.put(taxi, assignment.getNewpath());
                         assignment.delPath();
@@ -180,7 +182,7 @@ public class PlannedSimulator extends Simulator {
                             taxiset.remove(taxi);
                     }
                     allassociations.add(association);
-                    if (Assignment.totalIncCost(association) == 0.0)
+                    if (PlannedAssignment.totalIncCost(association) == 0.0)
                         foundzerosolution.set(true);
 
                 }
@@ -196,7 +198,7 @@ public class PlannedSimulator extends Simulator {
         }
 
 
-        Collection<Assignment> result = allassociations.stream().min(Comparator.comparingDouble(Assignment::totalIncCost)).get();
+        Collection<PlannedAssignment> result = allassociations.stream().min(Comparator.comparingDouble(PlannedAssignment::totalIncCost)).get();
         result.forEach(x -> x.getTaxi().setCorepath(this.getGraph().integrateIntoCorePath(x.getTaxi().getCorepath(), x.getPassenger().getStart(), x.getPassenger().getEnd())));
         result.forEach(x -> x.getTaxi().addToAssigned(x.getPassenger()));
         result.forEach(x -> x.getPassenger().markAssigned());
@@ -209,11 +211,11 @@ public class PlannedSimulator extends Simulator {
 
         System.out.println("Turn: " + this.turn
 //                + "Allassignments: " + allassignments.size() + " | "
-                        + " | Asgn " + allassociations.stream().mapToDouble(Assignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
+                        + " | Asgn " + allassociations.stream().mapToDouble(PlannedAssignment::totalIncCost).summaryStatistics().toString().replace("DoubleSummaryStatistics", "")
                         // + " | Unsg " + this.passengers.stream().map(x -> (PlannedPassenger) x).filter(x -> !x.isAssigned()).count()
                         + " | CoPa " + this.taxis.stream().map(x -> (PlannedTaxi) x).mapToInt(x -> x.corepath.size()).summaryStatistics().toString().replace("IntSummaryStatistics", "")
 			+ " | Locs " + this.taxis.stream().map(x -> (PlannedTaxi) x).filter(x->x.corepath.size() == 0).map(PlannedTaxi::getLocation).map(x->x.getClass().getSimpleName()).collect(Collectors.toList())
         );
     }
-    */
+
 }

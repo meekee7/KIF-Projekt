@@ -43,7 +43,7 @@ public class PlannedPassenger extends Passenger {
     public void markUnassigned(){this.assigned = false;}
 
     public OptaPassenger toOpta(){
-        return new OptaPassenger(this.getStart(), this.getEnd(), this.id);
+        return new OptaPassenger(this.getStart(), this.getEnd(), this.id, this.getStart().getDistance(this.getEnd()));
     }
 
     /*

@@ -73,6 +73,11 @@ public class SimulationConfig {
             this.config.clearing = clearing;
             return this;
         }
+
+        public Builder taxinum(int taxinum){
+            this.config.taxinum = taxinum;
+            return this;
+        }
     }
 
     private double speed = 1000; //1000
@@ -85,6 +90,7 @@ public class SimulationConfig {
     private long maxcalctime = 100L;
     private int calcstep = 5;
     private int clearing = 20;
+    private int taxinum = 0;
 
     public SimulationConfig() {
     }
@@ -137,5 +143,10 @@ public class SimulationConfig {
     @XmlElement
     public int getClearing() {
         return clearing;
+    }
+
+    @XmlElement
+    public int getTaxinum() {
+        return taxinum;
     }
 }

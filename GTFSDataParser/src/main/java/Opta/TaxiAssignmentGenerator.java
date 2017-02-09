@@ -25,7 +25,7 @@ public class TaxiAssignmentGenerator {
         //assureComputerCapacityTotalAtLeastProcessRequiredTotal(cloudBalance);
         BigInteger possibleSolutionSize = BigInteger.valueOf(assignment.getTaxiList().size()).pow(
                 assignment.getPassengerList().size());
-        logger.info("Assignment {} has {} taxis and {} passengers with a search space of {}.",
+        logger.info("PlannedAssignment {} has {} taxis and {} passengers with a search space of {}.",
                 inputId, taxiListSize, passengerListSize,
                 AbstractSolutionImporter.getFlooredPossibleSolutionSize(possibleSolutionSize));
         return assignment;

@@ -145,18 +145,15 @@ public class Main {
         //System.exit(0);
         //Main.readAllGraphs();
         Instant start = Instant.now();
-        Map<String, Predicate<Route>> cityfilters = new LinkedHashMap<>();
+        Map<String, Integer> cityfilters = new LinkedHashMap<>();
         //This could be done with reflection
 
-        //cityfilters.put("VBB", CityFilter::VBB);
-        cityfilters.put("SmallTest", x -> Arrays.asList("U2", "U4").contains(x.getShortName()));
-        cityfilters.put("Potsdam", CityFilter::Potsdam);
-        cityfilters.put("Frankfurt", CityFilter::Frankfurt);
-        cityfilters.put("Cottbus", CityFilter::Cottbus);
-        cityfilters.put("Brandenburg", CityFilter::Brandenburg);
-        //cityfilters.put("BerlinStreet", CityFilter::BerlinStreet);
-        //cityfilters.put("BerlinFull", CityFilter::BerlinFull);
-        cityfilters.forEach((x, y) -> {
+        cityfilters.put("SmallTest", 3);
+        cityfilters.put("Potsdam", 128);
+        cityfilters.put("Frankfurt", 94);
+        cityfilters.put("Cottbus", 379);
+        cityfilters.put("Brandenburg", 74);
+        cityfilters.forEach((x, taxis) -> {
             Graph graph = GraphIO.read("VBB-Daten/" + x + ".xml");
             graph.buildPathCache();
             //PlannedSimulator sim = new PlannedSimulator(graph);
@@ -166,12 +163,14 @@ public class Main {
                     .spawnshare(0.1)
                     .speed(1000.0)
 
-                    .turns(1000)
+                    .turns(10000)
 
                     .linefrequency(graph.createEqualDistribution(4))
 
-                    .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
-                    .maxcalctime(20L)
+//                    .taxirate(x.equals("SmallTest") ? 0.5 : 0.8)
+                    .taxirate(Double.NaN)
+                    .taxinum(taxis)
+                    .maxcalctime(300L)
                     .calcstep(1)
                     .clearing(200000)
 

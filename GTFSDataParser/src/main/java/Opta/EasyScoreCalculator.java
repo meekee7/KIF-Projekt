@@ -21,19 +21,20 @@ public class EasyScoreCalculator implements org.optaplanner.core.impl.score.dire
             int peopleInTaxi = 0;
             double travelledDistance = 0.0;
             boolean used = false;
-
+            List<Node> mycp = taxi.getCorepath();
             // Calculate usage
             for (OptaPassenger passenger : assignment.getPassengerList()) {
                 if (taxi.equals(passenger.getTaxi())) {
                     peopleInTaxi++;
 
                     //method for path construction goes here.
-                    List<Node> newcorepath = taxi.getGraph().integrateIntoCorePath(taxi.getCorepath(), passenger.getStart(), passenger.getEnd());
-                    double cplength = taxi.getGraph().corePathLength(newcorepath);
-                    travelledDistance =+ cplength;
+                    mycp = taxi.getGraph().integrateIntoCorePath(mycp, passenger.getStart(), passenger.getEnd());
+//                    double cplength = taxi.getGraph().corePathLength(newcorepath);
+//                    travelledDistance =+ cplength;
                     used = true;
                 }
             }
+//            pathsum += taxi.getGraph().corePathLength(mycp);
 
             // Hard constraints
             int capacity = taxi.getCapacity() - peopleInTaxi;
@@ -44,7 +45,8 @@ public class EasyScoreCalculator implements org.optaplanner.core.impl.score.dire
 
             // Soft constraints
             if (used) {
-                softScore -= travelledDistance;
+                softScore -= (int) taxi.getGraph().corePathLength(mycp);
+//                softScore -= travelledDistance;
             }
         }
         return HardSoftScore.valueOf(hardScore, softScore);

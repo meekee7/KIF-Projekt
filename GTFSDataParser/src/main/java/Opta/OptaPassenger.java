@@ -9,7 +9,7 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
  * Created by Sabine on 07.02.2017.
  */
 @XStreamAlias("OptaPassenger")
-@PlanningEntity
+@PlanningEntity(difficultyComparatorClass = DifficultyComp.class)
 public class OptaPassenger {
     //private Location start;
     //private Location end;
@@ -18,15 +18,17 @@ public class OptaPassenger {
     private Node end;
     private int distance;
     private int Id;
+    private double airdist;
 
     public OptaPassenger() {
     }
 
-    public OptaPassenger(Node start, Node end, int id) {
+    public OptaPassenger(Node start, Node end, int id, double airdist) {
         this.start = start;
         this.end = end;
         this.Id = id;
         this.taxi = null;
+        this.airdist = airdist;
     }
 
     @PlanningVariable(valueRangeProviderRefs = {"taxiRange"})
@@ -60,5 +62,13 @@ public class OptaPassenger {
 
     public int getId() {
         return Id;
+    }
+
+    public double getAirdist() {
+        return airdist;
+    }
+
+    public void setAirdist(double airdist) {
+        this.airdist = airdist;
     }
 }
