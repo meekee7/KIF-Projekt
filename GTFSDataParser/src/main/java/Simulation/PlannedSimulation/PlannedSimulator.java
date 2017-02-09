@@ -101,6 +101,10 @@ public class PlannedSimulator extends Simulator {
                 .filter(x -> !x.isFull())
                 .map(PlannedTaxi::toOpta).collect(Collectors.toList())
         );
+        if (assignment.getTaxiList().isEmpty()){
+            System.out.println("Turn: " + this.turn + " | no new assignments");
+            return;
+        }
         Opta.Assignment solution = solver.solve(assignment);
 
         Map<Integer, PlannedTaxi> taximap = new HashMap<>();
