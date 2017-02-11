@@ -1,0 +1,28 @@
+Graph Brandenburg
+Type PlannedSimulator
+Passengers
+Total: 100050
+Undelivered: 41545
+Superstarved: 0
+-UNDELIVERED-
+Waiting: IntSummaryStatistics{count=41545, sum=101485326, min=1, average=2442,780744, max=8772}
+On road: 591
+Unassigned 77
+-DELIVERED-
+Happiness: DoubleSummaryStatistics{count=58505, sum=92646986,253940, min=0,000008, average=1583,573819, max=12504,002279}
+Waiting: IntSummaryStatistics{count=58505, sum=61764594, min=0, average=1055,714794, max=8336}
+Switches: IntSummaryStatistics{count=58505, sum=0, min=0, average=0,000000, max=0}
+InitPickup: IntSummaryStatistics{count=58505, sum=61764644, min=0, average=1055,715648, max=8336}
+TripTime: IntSummaryStatistics{count=58505, sum=5402345, min=1, average=92,339885, max=3671}
+Denied: IntSummaryStatistics{count=58505, sum=522317, min=0, average=8,927733, max=191}
+Waiting/Round: LongSummaryStatistics{count=10000, sum=163249920, min=36, average=16324,992000, max=40954}
+
+
+TAXIS:
+PassengersLoaded: IntSummaryStatistics{count=74, sum=59096, min=699, average=798,594595, max=902}
+TotalDistance: DoubleSummaryStatistics{count=74, sum=427299698,063405, min=5640452,843518, average=5774320,244100, max=5867745,204587}
+NodesHit: IntSummaryStatistics{count=74, sum=698418, min=9329, average=9438,081081, max=9541}
+Standstill: IntSummaryStatistics{count=74, sum=560, min=0, average=7,567568, max=59}
+Remaining Futurepath: IntSummaryStatistics{count=74, sum=0, min=0, average=0,000000, max=0}
+Assigned: IntSummaryStatistics{count=74, sum=40877, min=416, average=552,391892, max=779}
+LoadStats: IntSummaryStatistics{count=740000, sum=5469535, min=0, average=7,391264, max=8}

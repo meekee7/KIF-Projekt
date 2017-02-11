@@ -1,0 +1,26 @@
+Graph Potsdam
+Type LineSimulator
+Passengers
+Total: 170085
+Undelivered: 424
+Superstarved: 0
+-UNDELIVERED-
+Waiting: IntSummaryStatistics{count=424, sum=2537, min=0, average=5,983491, max=39}
+On road: 307
+-DELIVERED-
+Happiness: DoubleSummaryStatistics{count=169661, sum=1121634,705155, min=0,000005, average=6,611034, max=141,696198}
+Waiting: IntSummaryStatistics{count=169661, sum=1514649, min=0, average=8,927502, max=98}
+Switches: IntSummaryStatistics{count=169661, sum=355540, min=0, average=2,095591, max=6}
+InitPickup: IntSummaryStatistics{count=169661, sum=360862, min=0, average=2,126959, max=91}
+TripTime: IntSummaryStatistics{count=169661, sum=4006290, min=1, average=23,613500, max=83}
+Denied: IntSummaryStatistics{count=169661, sum=168904, min=0, average=0,995538, max=26}
+Waiting/Round: LongSummaryStatistics{count=10000, sum=1517186, min=40, average=151,718600, max=240}
+
+
+TAXIS:
+PassengersLoaded: IntSummaryStatistics{count=141, sum=526092, min=438, average=3731,148936, max=11315}
+TotalDistance: DoubleSummaryStatistics{count=141, sum=834450312,218650, min=3054358,655596, average=5918087,320700, max=9623166,253402}
+NodesHit: IntSummaryStatistics{count=141, sum=1309837, min=3334, average=9289,624113, max=10001}
+Standstill: IntSummaryStatistics{count=141, sum=0, min=0, average=0,000000, max=0}
+Remaining Futurepath: IntSummaryStatistics{count=141, sum=885, min=1, average=6,276596, max=16}
+LoadStats: IntSummaryStatistics{count=1410000, sum=2856898, min=0, average=2,026169, max=8}

@@ -1,0 +1,26 @@
+Graph SmallTest
+Type LineSimulator
+Passengers
+Total: 10005
+Undelivered: 15
+Superstarved: 0
+-UNDELIVERED-
+Waiting: IntSummaryStatistics{count=15, sum=125, min=1, average=8,333333, max=17}
+On road: 2
+-DELIVERED-
+Happiness: DoubleSummaryStatistics{count=9990, sum=142425,995909, min=0,000007, average=14,256856, max=64,500012}
+Waiting: IntSummaryStatistics{count=9990, sum=131716, min=0, average=13,184785, max=65}
+Switches: IntSummaryStatistics{count=9990, sum=3933, min=0, average=0,393694, max=2}
+InitPickup: IntSummaryStatistics{count=9990, sum=91980, min=0, average=9,207207, max=43}
+TripTime: IntSummaryStatistics{count=9990, sum=102121, min=1, average=10,222322, max=66}
+Denied: IntSummaryStatistics{count=9990, sum=398, min=0, average=0,039840, max=2}
+Waiting/Round: LongSummaryStatistics{count=10000, sum=131841, min=2, average=13,184100, max=27}
+
+
+TAXIS:
+PassengersLoaded: IntSummaryStatistics{count=3, sum=13929, min=3288, average=4643,000000, max=7305}
+TotalDistance: DoubleSummaryStatistics{count=3, sum=9573366,694417, min=2888148,908467, average=3191122,231472, max=3362350,016453}
+NodesHit: IntSummaryStatistics{count=3, sum=7725, min=2223, average=2575,000000, max=3001}
+Standstill: IntSummaryStatistics{count=3, sum=0, min=0, average=0,000000, max=0}
+Remaining Futurepath: IntSummaryStatistics{count=3, sum=6, min=1, average=2,000000, max=3}
+LoadStats: IntSummaryStatistics{count=30000, sum=62414, min=0, average=2,080467, max=8}
