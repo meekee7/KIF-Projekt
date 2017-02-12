@@ -1,0 +1,28 @@
+Graph Cottbus
+Type PlannedSimulator
+Passengers
+Total: 410205
+Undelivered: 406629
+Superstarved: 4162
+-UNDELIVERED-
+Waiting: IntSummaryStatistics{count=406629, sum=2023234474, min=1, average=4975,627597, max=10000}
+On road: 21
+Unassigned 406533
+-DELIVERED-
+Happiness: DoubleSummaryStatistics{count=3576, sum=13400290,820008, min=0,000013, average=3747,284905, max=13699,500017}
+Waiting: IntSummaryStatistics{count=3576, sum=8933523, min=0, average=2498,188758, max=9133}
+Switches: IntSummaryStatistics{count=3576, sum=0, min=0, average=0,000000, max=0}
+InitPickup: IntSummaryStatistics{count=3576, sum=8933527, min=0, average=2498,189877, max=9133}
+TripTime: IntSummaryStatistics{count=3576, sum=950319, min=29, average=265,749161, max=2998}
+Denied: IntSummaryStatistics{count=3576, sum=19995, min=0, average=5,591443, max=71}
+Waiting/Round: LongSummaryStatistics{count=10000, sum=2032167997, min=246, average=203216,799700, max=406608}
+
+
+TAXIS:
+PassengersLoaded: IntSummaryStatistics{count=379, sum=3597, min=0, average=9,490765, max=270}
+TotalDistance: DoubleSummaryStatistics{count=379, sum=93605787,398847, min=0,000000, average=246980,969390, max=6932713,344825}
+NodesHit: IntSummaryStatistics{count=379, sum=97679, min=1, average=257,728232, max=7176}
+Standstill: IntSummaryStatistics{count=379, sum=3653737, min=1, average=9640,467018, max=10000}
+Remaining Futurepath: IntSummaryStatistics{count=379, sum=0, min=0, average=0,000000, max=0}
+Assigned: IntSummaryStatistics{count=379, sum=75, min=0, average=0,197889, max=45}
+LoadStats: IntSummaryStatistics{count=3790000, sum=967501, min=0, average=0,255277, max=8}
